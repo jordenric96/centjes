@@ -1,20 +1,18 @@
-/* --- RETRO NEON ARCADE VIBE --- */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+/* --- PREMIUM MODERN DASHBOARD --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --bg-color: #050505;
-    --card-bg: #111;
-    --text-main: #e0e0e0;
-    --text-muted: #a0a0a0;
-    --primary: #00ffff; /* Neon Cyaan */
-    --accent: #ff00ff; /* Neon Roze */
-    --positief: #39ff14; /* Neon Groen */
-    --negatief: #ff003c; /* Neon Rood */
-    --border-color: #00ffff;
-    --neon-glow: 0 0 5px #00ffff, 0 0 15px #00ffff, 0 0 30px #00ffff;
-    --neon-glow-accent: 0 0 5px #ff00ff, 0 0 15px #ff00ff, 0 0 30px #ff00ff;
-    --shadow: 0 0 15px rgba(0, 255, 255, 0.2);
-    --radius: 0px; /* Scherpe, hoekige randen */
+    --bg-color: #f3f4f6;
+    --card-bg: #ffffff;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --primary: #1e3a8a; /* Diepblauw voor rust en focus */
+    --accent: #3b82f6;  /* Fris blauw voor interactieve elementen */
+    --positief: #059669; /* Zacht, leesbaar groen */
+    --negatief: #dc2626; /* Helder maar niet-schreeuwend rood */
+    --border-color: #e5e7eb;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --radius: 12px;
 }
 
 * {
@@ -24,15 +22,11 @@
 }
 
 body {
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-color: var(--bg-color);
-    background-image: 
-        linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
-    background-size: 30px 30px; /* Raster effect op de achtergrond */
     color: var(--text-main);
     line-height: 1.6;
-    padding: 20px;
+    padding: 30px 20px;
 }
 
 /* --- LAYOUT --- */
@@ -47,10 +41,7 @@ header {
     align-items: center;
     flex-wrap: wrap;
     gap: 15px;
-    margin-bottom: 30px;
-    padding-bottom: 15px;
-    border-bottom: 3px solid var(--accent);
-    box-shadow: 0 10px 10px -10px var(--accent);
+    margin-bottom: 40px;
 }
 
 .header-titel {
@@ -60,158 +51,127 @@ header {
 }
 
 header h1 {
-    color: var(--accent);
-    font-size: 2.2rem;
-    text-transform: uppercase;
-    text-shadow: var(--neon-glow-accent);
-    letter-spacing: 2px;
+    color: var(--text-main);
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
 }
 
 .status-badge {
-    background-color: transparent;
-    color: var(--primary);
+    background-color: #f3f4f6;
+    color: var(--text-muted);
     padding: 6px 12px;
-    border: 1px solid var(--primary);
-    box-shadow: inset 0 0 5px var(--primary);
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
 .status-badge.succes {
-    border-color: var(--positief);
+    background-color: #d1fae5;
     color: var(--positief);
-    box-shadow: inset 0 0 5px var(--positief), 0 0 10px var(--positief);
 }
 
 /* --- FILTERS --- */
 .filter-sectie {
-    background-color: rgba(0, 0, 0, 0.8);
-    padding: 10px 15px;
-    border: 1px solid var(--primary);
-    box-shadow: var(--neon-glow);
+    background-color: var(--card-bg);
+    padding: 10px 16px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: 1px solid var(--border-color);
 }
 
 .filter-sectie label {
-    font-weight: 700;
-    color: var(--accent);
-    margin-right: 10px;
-    text-shadow: 0 0 5px var(--accent);
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-right: 8px;
+    font-size: 0.9rem;
 }
 
 .filter-sectie select, #sorteerSelect {
-    padding: 8px 12px;
-    border: 1px solid var(--primary);
-    font-size: 1rem;
-    font-family: 'Orbitron', sans-serif;
-    background-color: #000;
-    color: var(--primary);
+    padding: 8px 30px 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background-color: var(--bg-color);
+    color: var(--text-main);
     cursor: pointer;
     outline: none;
-    text-transform: uppercase;
+    transition: all 0.2s;
+    appearance: none; /* Verwijdert standaard pijl voor strakkere look */
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px top 50%;
+    background-size: 10px auto;
 }
 
 .filter-sectie select:focus, #sorteerSelect:focus {
-    box-shadow: 0 0 10px var(--primary);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Checkbox styling */
 input[type="checkbox"] {
     accent-color: var(--accent);
-    transform: scale(1.2);
-}
-
-label[for="toonEnkelOverig"], label:has(input[type="checkbox"]) {
-    background: transparent !important;
-    border: 1px solid var(--accent);
-    color: var(--accent) !important;
-    box-shadow: inset 0 0 5px var(--accent);
-    text-transform: uppercase;
-    font-size: 0.8rem !important;
-    letter-spacing: 1px;
+    transform: scale(1.1);
+    cursor: pointer;
 }
 
 /* --- GRIDS & KAARTEN --- */
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+    gap: 24px;
     margin-bottom: 30px;
 }
 
 .content-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-    gap: 20px;
+    gap: 24px;
     margin-bottom: 30px;
 }
 
 .card {
     background: var(--card-bg);
-    border: 2px solid var(--primary);
-    padding: 25px;
+    border-radius: var(--radius);
+    padding: 24px;
     box-shadow: var(--shadow);
-    position: relative;
-    overflow: hidden;
-}
-
-/* Leuke scanline over de kaarten */
-.card::after {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 255, 0.05) 51%);
-    background-size: 100% 4px;
-    pointer-events: none;
+    border: 1px solid var(--border-color);
 }
 
 .card h3 {
-    margin-bottom: 15px;
-    color: var(--primary);
-    font-size: 1.1rem;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    text-shadow: 0 0 5px var(--primary);
+    letter-spacing: 0.5px;
 }
 
 .totaal-card {
     text-align: center;
-    border-color: var(--accent);
-    box-shadow: inset 0 0 20px rgba(255, 0, 255, 0.1);
-}
-
-.totaal-card h3 {
-    color: var(--accent);
-    text-shadow: 0 0 5px var(--accent);
+    padding: 30px 20px;
 }
 
 .bedrag {
     font-size: 2.5rem;
-    font-weight: 900;
-    margin-top: 10px;
-    letter-spacing: 2px;
+    font-weight: 700;
+    margin-top: 5px;
+    letter-spacing: -1px;
 }
 
-.positief, .tekst-positief { 
-    color: var(--positief); 
-    text-shadow: 0 0 10px rgba(57, 255, 20, 0.8);
-}
-.negatief, .tekst-negatief { 
-    color: var(--negatief); 
-    text-shadow: 0 0 10px rgba(255, 0, 60, 0.8);
-}
-.neutraal { 
-    color: #fff; 
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-}
+.positief, .tekst-positief { color: var(--positief); font-weight: 500; }
+.negatief, .tekst-negatief { color: var(--negatief); font-weight: 500; }
+.neutraal { color: var(--text-main); }
 
 /* --- TABELLEN --- */
 .tabel-wrapper {
     max-height: 400px;
     overflow-y: auto;
-    border: 1px solid var(--primary);
-    background-color: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-bg);
 }
 
 .grote-tabel {
@@ -226,51 +186,51 @@ table {
 }
 
 th, td {
-    padding: 12px 15px;
-    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 th {
-    background-color: var(--primary);
-    color: #000;
+    background-color: #f9fafb;
+    color: var(--text-muted);
     position: sticky;
     top: 0;
     z-index: 10;
-    font-weight: 900;
+    font-weight: 600;
+    font-size: 0.85rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-tbody tr {
-    transition: all 0.2s;
+    letter-spacing: 0.5px;
 }
 
 tbody tr:hover {
-    background-color: rgba(0, 255, 255, 0.1);
-    cursor: crosshair;
+    background-color: #f9fafb;
 }
 
-/* Specifieke styling voor de categorie-badge in de tabel */
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status badge in de tabel (voor categorieën) */
 td span.status-badge {
-    background-color: transparent !important;
-    border: 1px solid var(--primary);
-    color: var(--primary) !important;
-    box-shadow: inset 0 0 5px rgba(0, 255, 255, 0.5);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: normal;
 }
 
-/* Scrollbar styling - Cyberpunk stijl */
+/* Scrollbar styling */
 ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: #000; 
-    border-left: 1px solid var(--primary);
+    background: transparent; 
 }
 ::-webkit-scrollbar-thumb {
-    background: var(--accent); 
+    background: #d1d5db; 
+    border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #fff; 
-    box-shadow: 0 0 10px var(--accent);
+    background: #9ca3af; 
 }

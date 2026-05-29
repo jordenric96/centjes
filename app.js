@@ -26,6 +26,8 @@ const CATEGORIE_RULES = {
     "Kapper": ["Hair"],
     "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon"],
     "Kine": ["kine"],
+    "Pluspas": ["Pluspas", "Corporate Benefits"],
+    
     // Hieronder staan je vaste kosten inclusief hun zoekwoorden:
     "AG insurance": ["AG"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 

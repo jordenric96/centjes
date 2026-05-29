@@ -12,7 +12,7 @@ const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "FLAVOR SHOP", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH"],
     "Creche": ["disneyland"],
     "Automaat werk": ["SELECTA 2850 BOOM"],
-    "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"],
+    "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S"],
     "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria"], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA"],
     "Dreamland": ["Dreamland"],

@@ -7,7 +7,7 @@ const KOLOM_MEDEDELING = "Mededeling";
 const KOLOM_DETAILS = "Details";
 const KOLOM_TYPE = "Type verrichting";
 
-// --- JOUW CATEGORIEËN ---
+// --- JOUW CATEGORIEËN (HIER MOETEN ALLE WOORDEN IN) ---
 const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "FLAVOR SHOP", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY"],
     "Creche": ["disneyland"],
@@ -25,10 +25,11 @@ const CATEGORIE_RULES = {
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara"],
     "Kapper": ["Hair"],
     "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo"]
-  
+    // Hieronder staan je vaste kosten inclusief hun zoekwoorden:
+   
 };
 
-// --- NIEUW: VASTE KOSTEN LIJST ---
+// --- NIEUW: VASTE KOSTEN LIJST (HIER ENKEL DE NAMEN VAN DE CATEGORIEËN) ---
 // Alles wat hierin staat telt op als 'Vast', de rest is automatisch 'Variabel'.
 const VASTE_CATEGORIEEN = [
     "AG insurance": ["AG"],

@@ -11,8 +11,15 @@
 
     <div class="hoofd-container">
         <header>
-            <h1>Gezamenlijk Dashboard</h1>
-            <div id="status" class="status-badge">Gegevens ophalen...</div>
+            <div class="header-titel">
+                <h1>Gezamenlijk Dashboard</h1>
+                <div id="status" class="status-badge">Gegevens ophalen...</div>
+            </div>
+            
+            <div class="filter-sectie">
+                <label for="jaarSelect">Selecteer jaar: </label>
+                <select id="jaarSelect"></select>
+            </div>
         </header>
 
         <section class="dashboard-grid">
@@ -65,7 +72,7 @@
         </div>
 
         <section class="card">
-            <h3>Recente Transacties</h3>
+            <h3>Transacties in dit jaar</h3>
             <div class="tabel-wrapper grote-tabel">
                 <table id="dataTable">
                     <thead id="tableHead"></thead>
@@ -76,13 +83,13 @@
     </div>
 
     <script>
-        // --- CONFIGURATIE ---
-        // Let op: hoofdlettergevoelig! Zorg dat dit exact matcht met je Google Sheet.
         const KOLOM_DATUM = "Datum"; 
         const KOLOM_BEDRAG = "Bedrag"; 
         const KOLOM_CATEGORIE = "Categorie"; 
         
         const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
+
+        let alleData = []; // Hier slaan we alles op zodat we snel kunnen filteren
 
         Papa.parse(sheetUrl, {
             download: true,
@@ -92,32 +99,75 @@
             complete: function(results) {
                 const data = results.data;
                 if(data && data.length > 0) {
+                    alleData = data;
                     document.getElementById('status').innerText = `Live verbonden (${data.length} transacties)`;
                     document.getElementById('status').classList.add('succes');
                     
-                    verwerkData(data);
-                    bouwTransactieTabel(data);
+                    initialiseerJaren();
                 } else {
                     document.getElementById('status').innerText = "Spreadsheet is leeg of onleesbaar.";
                 }
             }
         });
 
-        // Hulpfunctie om maand/jaar uit een datum string (bijv 15/05/2026) te halen
-        function haalMaandJaar(datumStr) {
+        // Haalt enkel het jaartal uit een datumstring
+        function haalJaar(datumStr) {
             if (!datumStr) return "Onbekend";
             const parts = String(datumStr).split(/[-/]/);
             if (parts.length >= 3) {
-                // Check of het YYYY-MM-DD of DD-MM-YYYY is
-                if (parts[0].length === 4) return `${parts[1]}-${parts[0]}`; // YYYY-MM
-                return `${parts[1]}-${parts[2]}`; // MM-YYYY
+                if (parts[0].length === 4) return parts[0]; // YYYY-MM-DD
+                return parts[2]; // DD-MM-YYYY
             }
             return "Onbekend";
         }
 
-        // Hulpfunctie voor valuta opmaak
+        function haalMaandJaar(datumStr) {
+            if (!datumStr) return "Onbekend";
+            const parts = String(datumStr).split(/[-/]/);
+            if (parts.length >= 3) {
+                if (parts[0].length === 4) return `${parts[1]}-${parts[0]}`; 
+                return `${parts[1]}-${parts[2]}`; 
+            }
+            return "Onbekend";
+        }
+
         function formatBedrag(getal) {
             return "€ " + Math.abs(getal).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Nieuw: Check welke jaren er zijn en vul de dropdown
+        function initialiseerJaren() {
+            const jarenSet = new Set();
+            alleData.forEach(rij => {
+                const jaar = haalJaar(rij[KOLOM_DATUM]);
+                if (jaar !== "Onbekend") jarenSet.add(jaar);
+            });
+
+            // Sorteer van nieuw naar oud
+            const jarenArray = Array.from(jarenSet).sort().reverse();
+            const select = document.getElementById('jaarSelect');
+            
+            jarenArray.forEach(jaar => {
+                const option = document.createElement('option');
+                option.value = jaar;
+                option.textContent = jaar;
+                select.appendChild(option);
+            });
+
+            // Als je een ander jaar kiest, update het dashboard
+            select.addEventListener('change', updateDashboard);
+            
+            // Laad direct het meest recente jaar in
+            updateDashboard();
+        }
+
+        // Nieuw: Filter de data en teken de tabellen opnieuw
+        function updateDashboard() {
+            const gekozenJaar = document.getElementById('jaarSelect').value;
+            const gefilterdeData = alleData.filter(rij => haalJaar(rij[KOLOM_DATUM]) === gekozenJaar);
+            
+            verwerkData(gefilterdeData);
+            bouwTransactieTabel(gefilterdeData);
         }
 
         function verwerkData(data) {
@@ -134,23 +184,19 @@
                 const maandJaar = haalMaandJaar(datum);
                 const categorie = rij[KOLOM_CATEGORIE] || "Overig";
 
-                // Totalen Jaar
                 if (bedrag > 0) jaarIn += bedrag;
                 else jaarUit += bedrag;
 
-                // Totalen Maand
                 if (!maandData[maandJaar]) maandData[maandJaar] = { in: 0, uit: 0 };
                 if (bedrag > 0) maandData[maandJaar].in += bedrag;
                 else maandData[maandJaar].uit += bedrag;
 
-                // Totalen Categorie (alleen uitgaven)
                 if (bedrag < 0) {
                     if (!categorieData[categorie]) categorieData[categorie] = 0;
                     categorieData[categorie] += Math.abs(bedrag);
                 }
             });
 
-            // Update HTML Jaaroverzicht
             document.getElementById('jaarInkomsten').innerText = formatBedrag(jaarIn);
             document.getElementById('jaarUitgaven').innerText = formatBedrag(jaarUit);
             
@@ -160,9 +206,7 @@
             if (balans > 0) balansEl.className = 'bedrag positief';
             else if (balans < 0) balansEl.className = 'bedrag negatief';
 
-            // Update HTML Maandoverzicht
             let maandHtml = '';
-            // Sorteer maanden alfabetisch/numeriek
             Object.keys(maandData).sort().reverse().forEach(mnd => {
                 const md = maandData[mnd];
                 const mBalans = md.in + md.uit;
@@ -177,7 +221,6 @@
             });
             document.getElementById('maandBody').innerHTML = maandHtml;
 
-            // Update HTML Categorieën
             let catHtml = '';
             Object.keys(categorieData).sort((a, b) => categorieData[b] - categorieData[a]).forEach(cat => {
                 catHtml += `<tr>
@@ -189,6 +232,12 @@
         }
 
         function bouwTransactieTabel(data) {
+            if(data.length === 0) {
+                document.getElementById('tableHead').innerHTML = '';
+                document.getElementById('tableBody').innerHTML = '<tr><td>Geen transacties gevonden voor dit jaar.</td></tr>';
+                return;
+            }
+
             const headers = Object.keys(data[0]);
             
             let headerHtml = '<tr>';
@@ -197,8 +246,7 @@
             document.getElementById('tableHead').innerHTML = headerHtml;
 
             let bodyHtml = '';
-            // Toon maximaal 100 laatste transacties om het soepel te houden
-            const toonData = data.slice(0, 100); 
+            const toonData = data.slice(0, 150); 
             toonData.forEach(rij => {
                 bodyHtml += '<tr>';
                 headers.forEach(h => {

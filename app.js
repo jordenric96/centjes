@@ -27,7 +27,7 @@ const CATEGORIE_RULES = {
     "Kapper": ["Hair", "BLONDES & BROWNIES"],
     "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon", "Iboya"],
     "Kine": ["kine", "Action"],
-    "Pluspas": ["Pluspas", "Corporate Benefits"],
+    "Pluspas": ["Pluspas", "Corporate Benefi"],
     "Haviland": ["Haviland"],
     "AG insurance": ["AG"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 

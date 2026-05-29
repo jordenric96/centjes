@@ -73,7 +73,12 @@
         </div>
 
         <section class="card">
-            <h3>Transacties in dit jaar</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                <h3 style="margin-bottom: 0;">Transacties in dit jaar</h3>
+                <label style="cursor: pointer; font-weight: 600; color: var(--primary); background: #e1e8ed; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
+                    <input type="checkbox" id="toonEnkelOverig" style="margin-right: 5px;"> Toon enkel nog in te delen (Overig)
+                </label>
+            </div>
             <div class="tabel-wrapper grote-tabel">
                 <table id="dataTable">
                     <thead id="tableHead"></thead>

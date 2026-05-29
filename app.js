@@ -23,7 +23,8 @@ const CATEGORIE_RULES = {
     "Bakker": ["Exotica", "Locus"],
     "tanken": ["Dats", "Total"],
     "Sushi": ["Sushi"],
-    "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara"]
+    "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara"],
+     "Kapper": ["Hair"]
 };
 
 let alleData = []; 

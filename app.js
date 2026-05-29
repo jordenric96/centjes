@@ -25,7 +25,8 @@ const CATEGORIE_RULES = {
     "Sushi": ["Sushi"],
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara"],
      "Kapper": ["Hair"],
-    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo"]
+    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo"],
+    "AG insurance": ["AG"],
 };
 
 let alleData = []; 

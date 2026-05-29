@@ -16,7 +16,8 @@ const CATEGORIE_RULES = {
      "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"],
     "Bouwmarkt": ["Gamma", "Brico"],
     "Dreamland": ["Dreamland"],
-    "Bol": ["Bol"]
+    "Bol": ["Bol"],
+    "Broodjes": ["PRINSKE"] 
 };
 
 let alleData = []; 

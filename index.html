@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financieel Dashboard</title>
+    <title>Financieel Dashboard - Interactive Edition</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,7 +15,7 @@
         <header>
             <div class="header-titel">
                 <h1>Gezamenlijk Dashboard</h1>
-                <div id="status" class="status-badge">Gegevens ophalen...</div>
+                <div id="status" class="status-badge">Live Status</div>
             </div>
             
             <div class="filter-sectie">
@@ -24,39 +24,35 @@
             </div>
         </header>
 
-        <section class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 15px;">
-            <div class="card totaal-card" style="padding: 15px;">
-                <h3 style="font-size: 0.75rem; margin-bottom: 5px;">Totaal Inkomsten</h3>
-                <p id="jaarInkomsten" class="bedrag positief" style="font-size: 1.5rem;">€ 0.00</p>
+        <section class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 25px;">
+            <div class="card totaal-card">
+                <h3>Inkomsten</h3>
+                <p id="jaarInkomsten" class="bedrag positief">€ 0.00</p>
             </div>
-            <div class="card totaal-card" style="padding: 15px;">
-                <h3 style="font-size: 0.75rem; margin-bottom: 5px;">Totaal Uitgaven</h3>
-                <p id="jaarUitgaven" class="bedrag negatief" style="font-size: 1.5rem;">€ 0.00</p>
+            <div class="card totaal-card">
+                <h3>Uitgaven</h3>
+                <p id="jaarUitgaven" class="bedrag negatief">€ 0.00</p>
             </div>
-            <div class="card totaal-card" style="padding: 15px;">
-                <h3 style="font-size: 0.75rem; margin-bottom: 5px;">Netto Balans</h3>
-                <p id="jaarBalans" class="bedrag neutraal" style="font-size: 1.5rem;">€ 0.00</p>
+            <div class="card totaal-card">
+                <h3>Netto Balans</h3>
+                <p id="jaarBalans" class="bedrag neutraal">€ 0.00</p>
             </div>
-            <div class="card totaal-card" style="padding: 15px; background-color: #f8fafc;">
-                <h3 style="font-size: 0.75rem; margin-bottom: 5px;">Gemiddeld per Maand (Uit)</h3>
-                <p id="statGemiddelde" class="bedrag neutraal" style="font-size: 1.5rem;">€ 0.00</p>
-            </div>
-            <div class="card totaal-card" style="padding: 15px; background-color: #f8fafc;">
-                <h3 style="font-size: 0.75rem; margin-bottom: 5px;">Grootste Uitgave</h3>
-                <p id="statMax" class="bedrag negatief" style="font-size: 1.5rem;">€ 0.00</p>
+            <div class="card totaal-card" style="background-color: #fafafa;">
+                <h3>Vaste Kosten</h3>
+                <p id="vastTotaal" class="bedrag negatief" style="font-size: 1.5rem;">€ 0.00</p>
             </div>
         </section>
 
-       <div class="content-grid" style="margin-bottom: 30px;">
+        <div class="content-grid" style="margin-bottom: 30px;">
             <section class="card">
-                <h3>Inkomsten vs Uitgaven (Trend)</h3>
-                <div style="position: relative; height: 300px; width: 100%;">
+                <h3>Inkomsten vs Uitgaven</h3>
+                <div style="position: relative; height: 300px;">
                     <canvas id="maandGrafiek"></canvas>
                 </div>
             </section>
             <section class="card">
                 <h3>Verdeling Hoofdgroepen</h3>
-                <div style="position: relative; height: 300px; width: 100%;">
+                <div style="position: relative; height: 300px;">
                     <canvas id="categorieGrafiek"></canvas>
                 </div>
             </section>
@@ -64,14 +60,14 @@
 
         <div class="content-grid">
             <section class="card">
-                <h3>Overzicht per Maand</h3>
+                <h3>Trend per Maand</h3>
                 <div class="tabel-wrapper">
                     <table>
                         <thead>
                             <tr>
                                 <th>Maand</th>
-                                <th>Inkomsten</th>
-                                <th>Uitgaven</th>
+                                <th>In</th>
+                                <th>Uit</th>
                                 <th>Balans</th>
                             </tr>
                         </thead>
@@ -81,66 +77,32 @@
             </section>
 
             <section class="card">
-                <h3>Vaste vs Variabele Kosten</h3>
-                <div class="tabel-wrapper" style="margin-bottom: 20px;">
-                    <table>
-                        <tbody>
-                            <tr>
-                                <td><strong>Vaste Kosten</strong></td>
-                                <td id="vastTotaal" class="tekst-negatief">€ 0.00</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Variabele Kosten</strong></td>
-                                <td id="variabelTotaal" class="tekst-negatief">€ 0.00</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <h3>Uitgaven per Hoofdgroep</h3>
-                <div class="tabel-wrapper" style="margin-bottom: 20px;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Groep</th>
-                                <th>Totaal</th>
-                            </tr>
-                        </thead>
-                        <tbody id="hoofdgroepBody"></tbody>
-                    </table>
-                </div>
-
-                <h3>Details per Sub-categorie</h3>
+                <h3>Uitgaven Analyse (Klik voor details)</h3>
                 <div class="tabel-wrapper">
-                    <table>
+                    <table id="drillDownTable">
                         <thead>
                             <tr>
-                                <th>Sub-categorie</th>
-                                <th>Totaal</th>
+                                <th>Groep / Sub-categorie</th>
+                                <th style="text-align: right;">Totaal</th>
                             </tr>
                         </thead>
-                        <tbody id="categorieBody"></tbody>
+                        <tbody id="hoofdgroepBody">
+                            </tbody>
                     </table>
                 </div>
             </section>
         </div>
 
-        <section class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
-                <h3 style="margin-bottom: 0;">Transacties in dit jaar</h3>
-                
-                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
-                    <label style="font-weight: 600; color: var(--primary); font-size: 0.9rem;">
-                        Sorteer op:
-                        <select id="sorteerSelect" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; outline: none; margin-left: 5px;">
-                            <option value="datum">Datum (Nieuwste eerst)</option>
-                            <option value="uitgaven">Grootste uitgaven eerst</option>
-                            <option value="inkomsten">Grootste inkomsten eerst</option>
-                        </select>
-                    </label>
-
-                    <label style="cursor: pointer; font-weight: 600; color: var(--primary); background: #e1e8ed; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
-                        <input type="checkbox" id="toonEnkelOverig" style="margin-right: 5px;"> Toon enkel nog in te delen (Overig)
+        <section class="card" style="margin-top: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">Banktransacties</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="sorteerSelect">
+                        <option value="datum">Datum</option>
+                        <option value="uitgaven">Hoogste Uitgave</option>
+                    </select>
+                    <label style="font-size: 0.85rem; cursor: pointer;">
+                        <input type="checkbox" id="toonEnkelOverig"> Enkel Overig
                     </label>
                 </div>
             </div>
@@ -153,5 +115,14 @@
         </section>
     </div>
 
+    <style>
+        .hg-row { cursor: pointer; background-color: #f8fafc; font-weight: 600; }
+        .hg-row:hover { background-color: #f1f5f9; }
+        .sub-row { display: none; background-color: #ffffff; font-size: 0.85rem; }
+        .sub-row td:first-child { padding-left: 40px; color: #64748b; }
+        .hg-row i { margin-right: 10px; transition: transform 0.2s; }
+        .hg-row.active i { transform: rotate(90deg); }
+        .hg-row.active + .sub-row { display: table-row; }
+    </style>
 </body>
 </html>

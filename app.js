@@ -24,7 +24,8 @@ const CATEGORIE_RULES = {
     "tanken": ["Dats", "Total"],
     "Sushi": ["Sushi"],
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara"],
-     "Kapper": ["Hair"]
+     "Kapper": ["Hair"],
+    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo"]
 };
 
 let alleData = []; 

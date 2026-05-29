@@ -26,6 +26,7 @@ const CATEGORIE_RULES = {
     "Kapper": ["Hair", "BLONDES & BROWNIES"],
     "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon", "Iboya"],
     "Kine": ["kine"],
+    "Kine": ["Action"],
     "Pluspas": ["Pluspas", "Corporate Benefits"],
     
     // Hieronder staan je vaste kosten inclusief hun zoekwoorden:

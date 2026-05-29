@@ -25,7 +25,7 @@ const CATEGORIE_RULES = {
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara", "DEDOLES"],
     "Kapper": ["Hair", "BLONDES & BROWNIES"],
     "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon", "Iboya"],
-    "Kine": ["kine"],
+    "Kine": ["kine", "KINEPRAKTIJK"],
     "Kine": ["Action"],
     "Pluspas": ["Pluspas", "Corporate Benefits"],
     "Haviland": ["Haviland"],

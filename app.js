@@ -7,11 +7,13 @@ const KOLOM_MEDEDELING = "Mededeling";
 const KOLOM_DETAILS = "Details";
 const KOLOM_TYPE = "Type verrichting";
 
+// --- 1. JOUW SPECIFIEKE CATEGORIEËN ---
 const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "FLAVOR SHOP", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH"],
     "Creche": ["disneyland"],
     "Automaat werk": ["SELECTA 2850 BOOM"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"],
+    "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria"], // Nieuw toegevoegd
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM"],
     "Dreamland": ["Dreamland"],
     "Bol": ["Bol"],
@@ -24,7 +26,7 @@ const CATEGORIE_RULES = {
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara", "DEDOLES"],
     "Kapper": ["Hair", "BLONDES & BROWNIES"],
     "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon", "Iboya"],
-    "Kine": ["kine", "Action"], // Samengevoegd voor efficiëntie
+    "Kine": ["kine", "Action"],
     "Pluspas": ["Pluspas", "Corporate Benefits"],
     "Haviland": ["Haviland"],
     "AG insurance": ["AG"],
@@ -33,16 +35,23 @@ const CATEGORIE_RULES = {
     "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 };
 
+// --- 2. DE HOOFDGROEPEN (Nieuwe Onderverdeling) ---
+const HOOFD_GROEPEN = {
+    "Eten & Drinken": ["Supermarkt", "Frietjes", "Restaurant", "Broodjes", "Bakker", "Sushi"],
+    "Wonen & Energie": ["Bouwmarkt", "Meubelwinkel", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"],
+    "Vervoer & Auto": ["Tanken"],
+    "Gezondheid & Zorg": ["Apotheek", "Kapper", "Kine"],
+    "Vrije Tijd & Kleding": ["Hobby's", "Dreamland", "Bol", "Kleren"],
+    "Kinderen": ["Creche"],
+    "Werk & Verzekeringen": ["Automaat werk", "Pluspas", "AG insurance"]
+};
+
+// --- 3. VASTE KOSTEN LIJST ---
 const VASTE_CATEGORIEEN = [
-    "AG insurance",
-    "Lening",
-    "Water, Gas & Elektriciteit",
-    "Internet & Telecom",
-    "Haviland"
+    "AG insurance", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"
 ];
 
 let alleData = []; 
-// Globale variabelen voor grafieken zodat we ze kunnen updaten
 let mijnMaandGrafiek = null;
 let mijnCatGrafiek = null;
 
@@ -65,21 +74,20 @@ Papa.parse(sheetUrl, {
 });
 
 function bepaalCategorie(rij) {
-    const tekstOmInTeZoeken = `
-        ${rij[KOLOM_TEGENPARTIJ] || ''} 
-        ${rij[KOLOM_MEDEDELING] || ''} 
-        ${rij[KOLOM_DETAILS] || ''} 
-        ${rij[KOLOM_TYPE] || ''}
-    `.toLowerCase();
-
+    const tekstOmInTeZoeken = `${rij[KOLOM_TEGENPARTIJ] || ''} ${rij[KOLOM_MEDEDELING] || ''} ${rij[KOLOM_DETAILS] || ''} ${rij[KOLOM_TYPE] || ''}`.toLowerCase();
     for (const [categorie, trefwoorden] of Object.entries(CATEGORIE_RULES)) {
         for (const trefwoord of trefwoorden) {
-            if (tekstOmInTeZoeken.includes(trefwoord.toLowerCase())) {
-                return categorie;
-            }
+            if (tekstOmInTeZoeken.includes(trefwoord.toLowerCase())) return categorie;
         }
     }
     return "Overig";
+}
+
+function bepaalHoofdgroep(subCategorie) {
+    for (const [hoofdgroep, subCats] of Object.entries(HOOFD_GROEPEN)) {
+        if (subCats.includes(subCategorie)) return hoofdgroep;
+    }
+    return "Overig"; // Als het in geen enkele hoofdgroep zit
 }
 
 function haalJaar(datumStr) {
@@ -92,13 +100,12 @@ function haalJaar(datumStr) {
     return "Onbekend";
 }
 
-// Aangepast om correct te sorteren in grafieken (YYYY-MM)
 function haalMaandJaarSortering(datumStr) {
     if (!datumStr) return "Onbekend";
     const parts = String(datumStr).split(/[-/]/);
     if (parts.length >= 3) {
-        if (parts[0].length === 4) return `${parts[0]}-${parts[1]}`; // YYYY-MM
-        return `${parts[2]}-${parts[1]}`; // YYYY-MM
+        if (parts[0].length === 4) return `${parts[0]}-${parts[1]}`; 
+        return `${parts[2]}-${parts[1]}`; 
     }
     return "Onbekend";
 }
@@ -156,17 +163,13 @@ function updateDashboard() {
         bedragA = isNaN(bedragA) ? 0 : bedragA;
         bedragB = isNaN(bedragB) ? 0 : bedragB;
 
-        if (sorteerKeuze === "uitgaven") {
-            return bedragA - bedragB;
-        } else if (sorteerKeuze === "inkomsten") {
-            return bedragB - bedragA;
-        } else {
+        if (sorteerKeuze === "uitgaven") return bedragA - bedragB;
+        else if (sorteerKeuze === "inkomsten") return bedragB - bedragA;
+        else {
             const parseDatum = (d) => {
                 if (!d) return 0;
                 const p = String(d).split(/[-/]/);
-                if (p.length === 3) {
-                    return p[0].length === 4 ? new Date(`${p[0]}-${p[1]}-${p[2]}`).getTime() : new Date(`${p[2]}-${p[1]}-${p[0]}`).getTime();
-                }
+                if (p.length === 3) return p[0].length === 4 ? new Date(`${p[0]}-${p[1]}-${p[2]}`).getTime() : new Date(`${p[2]}-${p[1]}-${p[0]}`).getTime();
                 return 0;
             };
             return parseDatum(b[KOLOM_DATUM]) - parseDatum(a[KOLOM_DATUM]);
@@ -182,6 +185,7 @@ function verwerkData(data) {
     let grootsteUitgave = 0; 
     const maandData = {};
     const categorieData = {};
+    const hoofdgroepData = {}; // Nieuwe opslag voor de hoofdgroepen
 
     data.forEach(rij => {
         let bedrag = rij[KOLOM_BEDRAG];
@@ -191,19 +195,16 @@ function verwerkData(data) {
         const datum = rij[KOLOM_DATUM];
         const maandJaar = haalMaandJaarSortering(datum);
         const categorie = bepaalCategorie(rij);
+        const hoofdgroep = bepaalHoofdgroep(categorie);
 
         if (bedrag > 0) {
             jaarIn += bedrag;
         } else {
             jaarUit += bedrag;
-            // Bepaal grootste uitgave (is negatief, dus we zoeken de kleinste waarde)
             if (bedrag < grootsteUitgave) grootsteUitgave = bedrag;
             
-            if (VASTE_CATEGORIEEN.includes(categorie)) {
-                vastTotaal += Math.abs(bedrag);
-            } else {
-                variabelTotaal += Math.abs(bedrag);
-            }
+            if (VASTE_CATEGORIEEN.includes(categorie)) vastTotaal += Math.abs(bedrag);
+            else variabelTotaal += Math.abs(bedrag);
         }
 
         if (!maandData[maandJaar]) maandData[maandJaar] = { in: 0, uit: 0 };
@@ -211,12 +212,16 @@ function verwerkData(data) {
         else maandData[maandJaar].uit += bedrag;
 
         if (bedrag < 0) {
+            // Sla op per sub-categorie
             if (!categorieData[categorie]) categorieData[categorie] = 0;
             categorieData[categorie] += Math.abs(bedrag);
+            
+            // Sla op per hoofdgroep
+            if (!hoofdgroepData[hoofdgroep]) hoofdgroepData[hoofdgroep] = 0;
+            hoofdgroepData[hoofdgroep] += Math.abs(bedrag);
         }
     });
 
-    // --- BASIS STATS UPDATE ---
     document.getElementById('jaarInkomsten').innerText = formatBedrag(jaarIn);
     document.getElementById('jaarUitgaven').innerText = formatBedrag(jaarUit);
     document.getElementById('vastTotaal').innerText = formatBedrag(vastTotaal);
@@ -227,23 +232,17 @@ function verwerkData(data) {
     balansEl.innerText = (balans < 0 ? "- " : "") + formatBedrag(balans);
     balansEl.className = balans > 0 ? 'bedrag positief' : (balans < 0 ? 'bedrag negatief' : 'bedrag neutraal');
 
-    // --- NIEUWE QUICK STATS ---
     const aantalMaanden = Object.keys(maandData).length || 1;
     document.getElementById('statGemiddelde').innerText = formatBedrag(jaarUit / aantalMaanden);
     document.getElementById('statMax').innerText = formatBedrag(grootsteUitgave);
 
-    // --- TABELLEN BOUWEN ---
+    // Tabellen updaten
     let maandHtml = '';
-    // Maanden oplopend sorteren voor grafiek
     const gesorteerdeMaanden = Object.keys(maandData).sort(); 
-    
-    // Voor tabel tonen we ze aflopend (nieuwste boven)
     [...gesorteerdeMaanden].reverse().forEach(mnd => {
         const md = maandData[mnd];
         const mBalans = md.in + md.uit;
         let balansClass = mBalans >= 0 ? "tekst-positief" : "tekst-negatief";
-        
-        // Maak weergave mooier (bijv 2025-01 -> 01-2025)
         const mooieMaand = mnd.split('-')[1] + '-' + mnd.split('-')[0];
 
         maandHtml += `<tr>
@@ -255,6 +254,18 @@ function verwerkData(data) {
     });
     document.getElementById('maandBody').innerHTML = maandHtml;
 
+    // Nieuwe tabel voor Hoofdgroepen
+    let hgHtml = '';
+    const gesorteerdeHG = Object.keys(hoofdgroepData).sort((a, b) => hoofdgroepData[b] - hoofdgroepData[a]);
+    gesorteerdeHG.forEach(hg => {
+        hgHtml += `<tr>
+            <td><strong>${hg}</strong></td>
+            <td>${formatBedrag(hoofdgroepData[hg])}</td>
+        </tr>`;
+    });
+    document.getElementById('hoofdgroepBody').innerHTML = hgHtml;
+
+    // Tabel voor Sub-categorieën
     let catHtml = '';
     const gesorteerdeCat = Object.keys(categorieData).sort((a, b) => categorieData[b] - categorieData[a]);
     gesorteerdeCat.forEach(cat => {
@@ -265,16 +276,14 @@ function verwerkData(data) {
     });
     document.getElementById('categorieBody').innerHTML = catHtml;
 
-    // --- GRAFIEKEN TEKENEN ---
-    tekenGrafieken(maandData, gesorteerdeMaanden, categorieData, gesorteerdeCat);
+    tekenGrafieken(maandData, gesorteerdeMaanden, hoofdgroepData, gesorteerdeHG);
 }
 
-function tekenGrafieken(maandData, gesorteerdeMaanden, categorieData, gesorteerdeCat) {
-    // 1. Maandelijkse Staafgrafiek
+function tekenGrafieken(maandData, gesorteerdeMaanden, hoofdgroepData, gesorteerdeHG) {
     const ctxMaand = document.getElementById('maandGrafiek').getContext('2d');
-    if (mijnMaandGrafiek) mijnMaandGrafiek.destroy(); // Wis oude grafiek
+    if (mijnMaandGrafiek) mijnMaandGrafiek.destroy(); 
     
-    const maandLabels = gesorteerdeMaanden.map(m => m.split('-')[1] + '-' + m.split('-')[0]); // YYYY-MM -> MM-YYYY
+    const maandLabels = gesorteerdeMaanden.map(m => m.split('-')[1] + '-' + m.split('-')[0]); 
     const inData = gesorteerdeMaanden.map(m => maandData[m].in);
     const uitData = gesorteerdeMaanden.map(m => Math.abs(maandData[m].uit));
 
@@ -290,32 +299,21 @@ function tekenGrafieken(maandData, gesorteerdeMaanden, categorieData, gesorteerd
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // 2. Categorie Donut-grafiek
+    // Donut grafiek gebruikt nu de HOOFDGROEPEN voor een schoner overzicht
     const ctxCat = document.getElementById('categorieGrafiek').getContext('2d');
-    if (mijnCatGrafiek) mijnCatGrafiek.destroy(); // Wis oude grafiek
+    if (mijnCatGrafiek) mijnCatGrafiek.destroy(); 
 
-    // Beperk tot top 8 categorieën voor overzichtelijkheid, rest is 'Overig'
-    let topLabels = gesorteerdeCat.slice(0, 8);
-    let topData = topLabels.map(cat => categorieData[cat]);
-    
-    if (gesorteerdeCat.length > 8) {
-        let restTotaal = 0;
-        for (let i = 8; i < gesorteerdeCat.length; i++) {
-            restTotaal += categorieData[gesorteerdeCat[i]];
-        }
-        topLabels.push('Andere kleine cats');
-        topData.push(restTotaal);
-    }
+    const hgDataArray = gesorteerdeHG.map(hg => hoofdgroepData[hg]);
 
     mijnCatGrafiek = new Chart(ctxCat, {
         type: 'doughnut',
         data: {
-            labels: topLabels,
+            labels: gesorteerdeHG,
             datasets: [{
-                data: topData,
+                data: hgDataArray,
                 backgroundColor: [
                     '#3b82f6', '#f59e0b', '#10b981', '#ef4444', 
-                    '#8b5cf6', '#ec4899', '#06b6d4', '#64748b', '#cbd5e1'
+                    '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'
                 ],
                 borderWidth: 2,
                 borderColor: '#ffffff'
@@ -339,7 +337,7 @@ function bouwTransactieTabel(data) {
     const headers = Object.keys(data[0]);
     let headerHtml = '<tr>';
     headers.forEach(h => { headerHtml += `<th>${h}</th>`; });
-    headerHtml += `<th>Berekende Categorie</th></tr>`;
+    headerHtml += `<th>Hoofdgroep</th><th>Categorie</th></tr>`; // Twee kolommen toegevoegd!
     document.getElementById('tableHead').innerHTML = headerHtml;
 
     let bodyHtml = '';
@@ -360,9 +358,14 @@ function bouwTransactieTabel(data) {
         });
         
         const berekendeCat = bepaalCategorie(rij);
-        const bgKleur = berekendeCat === "Overig" ? "#ffeedd" : "#e1e8ed";
-        const tekstKleur = berekendeCat === "Overig" ? "#d35400" : "#34495e";
+        const berekendeHoofd = bepaalHoofdgroep(berekendeCat);
         
+        const isOverig = berekendeCat === "Overig";
+        const bgKleur = isOverig ? "#ffeedd" : "#e1e8ed";
+        const tekstKleur = isOverig ? "#d35400" : "#34495e";
+        
+        // Nu tonen we in de grote lijst óók of het Eten, Wonen etc is.
+        bodyHtml += `<td><span class="status-badge" style="background-color: transparent; border: 1px solid #ccc; color: #666;">${berekendeHoofd}</span></td>`;
         bodyHtml += `<td><span class="status-badge" style="background-color: ${bgKleur}; color: ${tekstKleur};">${berekendeCat}</span></td>`;
         bodyHtml += '</tr>';
     });

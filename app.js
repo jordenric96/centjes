@@ -13,7 +13,7 @@ const CATEGORIE_RULES = {
     "Creche": ["disneyland"],
     "Automaat werk": ["SELECTA 2850 BOOM"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"],
-    "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria"], // Nieuw toegevoegd
+    "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria"], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM"],
     "Dreamland": ["Dreamland"],
     "Bol": ["Bol"],
@@ -35,7 +35,7 @@ const CATEGORIE_RULES = {
     "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 };
 
-// --- 2. DE HOOFDGROEPEN (Nieuwe Onderverdeling) ---
+// --- 2. DE HOOFDGROEPEN ---
 const HOOFD_GROEPEN = {
     "Eten & Drinken": ["Supermarkt", "Frietjes", "Restaurant", "Broodjes", "Bakker", "Sushi"],
     "Wonen & Energie": ["Bouwmarkt", "Meubelwinkel", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"],
@@ -87,7 +87,7 @@ function bepaalHoofdgroep(subCategorie) {
     for (const [hoofdgroep, subCats] of Object.entries(HOOFD_GROEPEN)) {
         if (subCats.includes(subCategorie)) return hoofdgroep;
     }
-    return "Overig"; // Als het in geen enkele hoofdgroep zit
+    return "Overig"; 
 }
 
 function haalJaar(datumStr) {
@@ -185,7 +185,7 @@ function verwerkData(data) {
     let grootsteUitgave = 0; 
     const maandData = {};
     const categorieData = {};
-    const hoofdgroepData = {}; // Nieuwe opslag voor de hoofdgroepen
+    const hoofdgroepData = {}; 
 
     data.forEach(rij => {
         let bedrag = rij[KOLOM_BEDRAG];
@@ -212,11 +212,9 @@ function verwerkData(data) {
         else maandData[maandJaar].uit += bedrag;
 
         if (bedrag < 0) {
-            // Sla op per sub-categorie
             if (!categorieData[categorie]) categorieData[categorie] = 0;
             categorieData[categorie] += Math.abs(bedrag);
             
-            // Sla op per hoofdgroep
             if (!hoofdgroepData[hoofdgroep]) hoofdgroepData[hoofdgroep] = 0;
             hoofdgroepData[hoofdgroep] += Math.abs(bedrag);
         }
@@ -236,7 +234,6 @@ function verwerkData(data) {
     document.getElementById('statGemiddelde').innerText = formatBedrag(jaarUit / aantalMaanden);
     document.getElementById('statMax').innerText = formatBedrag(grootsteUitgave);
 
-    // Tabellen updaten
     let maandHtml = '';
     const gesorteerdeMaanden = Object.keys(maandData).sort(); 
     [...gesorteerdeMaanden].reverse().forEach(mnd => {
@@ -254,7 +251,6 @@ function verwerkData(data) {
     });
     document.getElementById('maandBody').innerHTML = maandHtml;
 
-    // Nieuwe tabel voor Hoofdgroepen
     let hgHtml = '';
     const gesorteerdeHG = Object.keys(hoofdgroepData).sort((a, b) => hoofdgroepData[b] - hoofdgroepData[a]);
     gesorteerdeHG.forEach(hg => {
@@ -265,7 +261,6 @@ function verwerkData(data) {
     });
     document.getElementById('hoofdgroepBody').innerHTML = hgHtml;
 
-    // Tabel voor Sub-categorieën
     let catHtml = '';
     const gesorteerdeCat = Object.keys(categorieData).sort((a, b) => categorieData[b] - categorieData[a]);
     gesorteerdeCat.forEach(cat => {
@@ -280,6 +275,7 @@ function verwerkData(data) {
 }
 
 function tekenGrafieken(maandData, gesorteerdeMaanden, hoofdgroepData, gesorteerdeHG) {
+    // --- STAAFGRAFIEK MET ZACHTERE KLEUREN ---
     const ctxMaand = document.getElementById('maandGrafiek').getContext('2d');
     if (mijnMaandGrafiek) mijnMaandGrafiek.destroy(); 
     
@@ -292,14 +288,24 @@ function tekenGrafieken(maandData, gesorteerdeMaanden, hoofdgroepData, gesorteer
         data: {
             labels: maandLabels,
             datasets: [
-                { label: 'Inkomsten', data: inData, backgroundColor: '#059669', borderRadius: 4 },
-                { label: 'Uitgaven', data: uitData, backgroundColor: '#dc2626', borderRadius: 4 }
+                { 
+                    label: 'Inkomsten', 
+                    data: inData, 
+                    backgroundColor: 'rgba(5, 150, 105, 0.8)', // Zachter groen
+                    borderRadius: 4 
+                },
+                { 
+                    label: 'Uitgaven', 
+                    data: uitData, 
+                    backgroundColor: 'rgba(220, 38, 38, 0.8)', // Zachter rood
+                    borderRadius: 4 
+                }
             ]
         },
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // Donut grafiek gebruikt nu de HOOFDGROEPEN voor een schoner overzicht
+    // --- DONUT GRAFIEK MET PREMIUM BANK-PALET ---
     const ctxCat = document.getElementById('categorieGrafiek').getContext('2d');
     if (mijnCatGrafiek) mijnCatGrafiek.destroy(); 
 
@@ -312,8 +318,14 @@ function tekenGrafieken(maandData, gesorteerdeMaanden, hoofdgroepData, gesorteer
             datasets: [{
                 data: hgDataArray,
                 backgroundColor: [
-                    '#3b82f6', '#f59e0b', '#10b981', '#ef4444', 
-                    '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'
+                    '#1e3a8a', // Diep donkerblauw
+                    '#3b82f6', // Helder blauw
+                    '#0ea5e9', // Oceaan blauw
+                    '#14b8a6', // Teal / Zeegroen
+                    '#6366f1', // Zacht indigo
+                    '#8b5cf6', // Zacht paars
+                    '#94a3b8', // Neutraal leisteengrijs
+                    '#cbd5e1'  // Lichtgrijs voor de restjes
                 ],
                 borderWidth: 2,
                 borderColor: '#ffffff'
@@ -337,7 +349,7 @@ function bouwTransactieTabel(data) {
     const headers = Object.keys(data[0]);
     let headerHtml = '<tr>';
     headers.forEach(h => { headerHtml += `<th>${h}</th>`; });
-    headerHtml += `<th>Hoofdgroep</th><th>Categorie</th></tr>`; // Twee kolommen toegevoegd!
+    headerHtml += `<th>Hoofdgroep</th><th>Categorie</th></tr>`; 
     document.getElementById('tableHead').innerHTML = headerHtml;
 
     let bodyHtml = '';
@@ -364,7 +376,6 @@ function bouwTransactieTabel(data) {
         const bgKleur = isOverig ? "#ffeedd" : "#e1e8ed";
         const tekstKleur = isOverig ? "#d35400" : "#34495e";
         
-        // Nu tonen we in de grote lijst óók of het Eten, Wonen etc is.
         bodyHtml += `<td><span class="status-badge" style="background-color: transparent; border: 1px solid #ccc; color: #666;">${berekendeHoofd}</span></td>`;
         bodyHtml += `<td><span class="status-badge" style="background-color: ${bgKleur}; color: ${tekstKleur};">${berekendeCat}</span></td>`;
         bodyHtml += '</tr>';

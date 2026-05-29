@@ -6,6 +6,7 @@
     <title>Financieel Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js" defer></script>
 </head>
 <body>
@@ -23,20 +24,39 @@
             </div>
         </header>
 
-        <section class="dashboard-grid">
-            <div class="card totaal-card">
-                <h3>Jaaroverzicht: Inkomsten</h3>
-                <p id="jaarInkomsten" class="bedrag positief">€ 0.00</p>
+        <section class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 15px;">
+            <div class="card totaal-card" style="padding: 15px;">
+                <h3 style="font-size: 0.75rem; margin-bottom: 5px;">Totaal Inkomsten</h3>
+                <p id="jaarInkomsten" class="bedrag positief" style="font-size: 1.5rem;">€ 0.00</p>
             </div>
-            <div class="card totaal-card">
-                <h3>Jaaroverzicht: Uitgaven</h3>
-                <p id="jaarUitgaven" class="bedrag negatief">€ 0.00</p>
+            <div class="card totaal-card" style="padding: 15px;">
+                <h3 style="font-size: 0.75rem; margin-bottom: 5px;">Totaal Uitgaven</h3>
+                <p id="jaarUitgaven" class="bedrag negatief" style="font-size: 1.5rem;">€ 0.00</p>
             </div>
-            <div class="card totaal-card">
-                <h3>Netto Balans</h3>
-                <p id="jaarBalans" class="bedrag neutraal">€ 0.00</p>
+            <div class="card totaal-card" style="padding: 15px;">
+                <h3 style="font-size: 0.75rem; margin-bottom: 5px;">Netto Balans</h3>
+                <p id="jaarBalans" class="bedrag neutraal" style="font-size: 1.5rem;">€ 0.00</p>
+            </div>
+            <div class="card totaal-card" style="padding: 15px; background-color: #f8fafc;">
+                <h3 style="font-size: 0.75rem; margin-bottom: 5px;">Gemiddeld per Maand (Uit)</h3>
+                <p id="statGemiddelde" class="bedrag neutraal" style="font-size: 1.5rem;">€ 0.00</p>
+            </div>
+            <div class="card totaal-card" style="padding: 15px; background-color: #f8fafc;">
+                <h3 style="font-size: 0.75rem; margin-bottom: 5px;">Grootste Uitgave</h3>
+                <p id="statMax" class="bedrag negatief" style="font-size: 1.5rem;">€ 0.00</p>
             </div>
         </section>
+
+        <div class="content-grid" style="margin-bottom: 30px;">
+            <section class="card">
+                <h3>Inkomsten vs Uitgaven (Trend)</h3>
+                <canvas id="maandGrafiek" height="200"></canvas>
+            </section>
+            <section class="card">
+                <h3>Verdeling Uitgaven</h3>
+                <canvas id="categorieGrafiek" height="200"></canvas>
+            </section>
+        </div>
 
         <div class="content-grid">
             <section class="card">
@@ -57,30 +77,9 @@
             </section>
 
             <section class="card">
-                <h3>Uitgaven per Categorie</h3>
-                <div class="tabel-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Categorie</th>
-                                <th>Totaal</th>
-                            </tr>
-                        </thead>
-                        <tbody id="categorieBody"></tbody>
-                    </table>
-                </div>
-            </section>
-            
-            <section class="card">
                 <h3>Vaste vs Variabele Kosten</h3>
-                <div class="tabel-wrapper">
+                <div class="tabel-wrapper" style="margin-bottom: 20px;">
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Type Kost</th>
-                                <th>Totaal Uitgegeven</th>
-                            </tr>
-                        </thead>
                         <tbody>
                             <tr>
                                 <td><strong>Vaste Kosten</strong></td>
@@ -91,6 +90,19 @@
                                 <td id="variabelTotaal" class="tekst-negatief">€ 0.00</td>
                             </tr>
                         </tbody>
+                    </table>
+                </div>
+
+                <h3>Uitgaven per Categorie</h3>
+                <div class="tabel-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Categorie</th>
+                                <th>Totaal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categorieBody"></tbody>
                     </table>
                 </div>
             </section>

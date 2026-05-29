@@ -1,16 +1,20 @@
-/* --- BASIS VARIABELEN --- */
+/* --- RETRO NEON ARCADE VIBE --- */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
 :root {
-    --bg-color: #f4f7f6;
-    --card-bg: #ffffff;
-    --text-main: #2c3e50;
-    --text-muted: #7f8c8d;
-    --primary: #34495e;
-    --accent: #3498db;
-    --positief: #27ae60;
-    --negatief: #e74c3c;
-    --border-color: #ecf0f1;
-    --shadow: 0 4px 6px rgba(0,0,0,0.05);
-    --radius: 12px;
+    --bg-color: #050505;
+    --card-bg: #111;
+    --text-main: #e0e0e0;
+    --text-muted: #a0a0a0;
+    --primary: #00ffff; /* Neon Cyaan */
+    --accent: #ff00ff; /* Neon Roze */
+    --positief: #39ff14; /* Neon Groen */
+    --negatief: #ff003c; /* Neon Rood */
+    --border-color: #00ffff;
+    --neon-glow: 0 0 5px #00ffff, 0 0 15px #00ffff, 0 0 30px #00ffff;
+    --neon-glow-accent: 0 0 5px #ff00ff, 0 0 15px #ff00ff, 0 0 30px #ff00ff;
+    --shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+    --radius: 0px; /* Scherpe, hoekige randen */
 }
 
 * {
@@ -20,8 +24,12 @@
 }
 
 body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: 'Orbitron', sans-serif;
     background-color: var(--bg-color);
+    background-image: 
+        linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 30px 30px; /* Raster effect op de achtergrond */
     color: var(--text-main);
     line-height: 1.6;
     padding: 20px;
@@ -37,28 +45,91 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
     margin-bottom: 30px;
     padding-bottom: 15px;
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: 3px solid var(--accent);
+    box-shadow: 0 10px 10px -10px var(--accent);
+}
+
+.header-titel {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 header h1 {
-    color: var(--primary);
-    font-size: 2rem;
+    color: var(--accent);
+    font-size: 2.2rem;
+    text-transform: uppercase;
+    text-shadow: var(--neon-glow-accent);
+    letter-spacing: 2px;
 }
 
 .status-badge {
-    background-color: #e1e8ed;
-    color: var(--text-muted);
+    background-color: transparent;
+    color: var(--primary);
     padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 600;
+    border: 1px solid var(--primary);
+    box-shadow: inset 0 0 5px var(--primary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .status-badge.succes {
-    background-color: #d5f5e3;
+    border-color: var(--positief);
     color: var(--positief);
+    box-shadow: inset 0 0 5px var(--positief), 0 0 10px var(--positief);
+}
+
+/* --- FILTERS --- */
+.filter-sectie {
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 10px 15px;
+    border: 1px solid var(--primary);
+    box-shadow: var(--neon-glow);
+}
+
+.filter-sectie label {
+    font-weight: 700;
+    color: var(--accent);
+    margin-right: 10px;
+    text-shadow: 0 0 5px var(--accent);
+}
+
+.filter-sectie select, #sorteerSelect {
+    padding: 8px 12px;
+    border: 1px solid var(--primary);
+    font-size: 1rem;
+    font-family: 'Orbitron', sans-serif;
+    background-color: #000;
+    color: var(--primary);
+    cursor: pointer;
+    outline: none;
+    text-transform: uppercase;
+}
+
+.filter-sectie select:focus, #sorteerSelect:focus {
+    box-shadow: 0 0 10px var(--primary);
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+    accent-color: var(--accent);
+    transform: scale(1.2);
+}
+
+label[for="toonEnkelOverig"], label:has(input[type="checkbox"]) {
+    background: transparent !important;
+    border: 1px solid var(--accent);
+    color: var(--accent) !important;
+    box-shadow: inset 0 0 5px var(--accent);
+    text-transform: uppercase;
+    font-size: 0.8rem !important;
+    letter-spacing: 1px;
 }
 
 /* --- GRIDS & KAARTEN --- */
@@ -78,39 +149,69 @@ header h1 {
 
 .card {
     background: var(--card-bg);
-    border-radius: var(--radius);
+    border: 2px solid var(--primary);
     padding: 25px;
     box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Leuke scanline over de kaarten */
+.card::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 255, 0.05) 51%);
+    background-size: 100% 4px;
+    pointer-events: none;
 }
 
 .card h3 {
     margin-bottom: 15px;
-    color: var(--text-muted);
+    color: var(--primary);
     font-size: 1.1rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 5px var(--primary);
 }
 
 .totaal-card {
     text-align: center;
+    border-color: var(--accent);
+    box-shadow: inset 0 0 20px rgba(255, 0, 255, 0.1);
+}
+
+.totaal-card h3 {
+    color: var(--accent);
+    text-shadow: 0 0 5px var(--accent);
 }
 
 .bedrag {
     font-size: 2.5rem;
-    font-weight: bold;
+    font-weight: 900;
     margin-top: 10px;
+    letter-spacing: 2px;
 }
 
-.positief, .tekst-positief { color: var(--positief); }
-.negatief, .tekst-negatief { color: var(--negatief); }
-.neutraal { color: var(--primary); }
+.positief, .tekst-positief { 
+    color: var(--positief); 
+    text-shadow: 0 0 10px rgba(57, 255, 20, 0.8);
+}
+.negatief, .tekst-negatief { 
+    color: var(--negatief); 
+    text-shadow: 0 0 10px rgba(255, 0, 60, 0.8);
+}
+.neutraal { 
+    color: #fff; 
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
 
 /* --- TABELLEN --- */
 .tabel-wrapper {
     max-height: 400px;
     overflow-y: auto;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border: 1px solid var(--primary);
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .grote-tabel {
@@ -121,84 +222,55 @@ table {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
+    font-size: 0.9rem;
 }
 
 th, td {
     padding: 12px 15px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
 }
 
 th {
     background-color: var(--primary);
-    color: white;
+    color: #000;
     position: sticky;
     top: 0;
     z-index: 10;
-    font-weight: 600;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+tbody tr {
+    transition: all 0.2s;
 }
 
 tbody tr:hover {
-    background-color: #f9fbfc;
+    background-color: rgba(0, 255, 255, 0.1);
+    cursor: crosshair;
 }
 
-/* Scrollbar styling voor een strakke look */
+/* Specifieke styling voor de categorie-badge in de tabel */
+td span.status-badge {
+    background-color: transparent !important;
+    border: 1px solid var(--primary);
+    color: var(--primary) !important;
+    box-shadow: inset 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
+/* Scrollbar styling - Cyberpunk stijl */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
 }
 ::-webkit-scrollbar-track {
-    background: #f1f1f1; 
-    border-radius: 4px;
+    background: #000; 
+    border-left: 1px solid var(--primary);
 }
 ::-webkit-scrollbar-thumb {
-    background: #bdc3c7; 
-    border-radius: 4px;
+    background: var(--accent); 
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #95a5a6; 
-}
-
-/* --- EXTRA VOOR HEADER EN FILTER --- */
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap; /* Zorgt dat het netjes breekt op mobiel */
-    gap: 15px;
-}
-
-.header-titel {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.filter-sectie {
-    background-color: var(--card-bg);
-    padding: 10px 15px;
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
-}
-
-.filter-sectie label {
-    font-weight: 600;
-    color: var(--primary);
-    margin-right: 10px;
-}
-
-.filter-sectie select {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 1rem;
-    font-family: inherit;
-    background-color: white;
-    cursor: pointer;
-    color: var(--text-main);
-    outline: none;
-}
-
-.filter-sectie select:focus {
-    border-color: var(--accent);
+    background: #fff; 
+    box-shadow: 0 0 10px var(--accent);
 }

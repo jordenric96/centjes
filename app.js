@@ -9,7 +9,7 @@ const KOLOM_TYPE = "Type verrichting";
 
 // --- JOUW CATEGORIEËN (HIER MOETEN ALLE WOORDEN IN) ---
 const CATEGORIE_RULES = {
-    "Supermarkt": ["huwaert", "FLAVOR SHOP", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY"],
+    "Supermarkt": ["huwaert", "FLAVOR SHOP", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH"],
     "Creche": ["disneyland"],
     "Automaat werk": ["SELECTA 2850 BOOM"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"],

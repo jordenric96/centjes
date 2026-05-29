@@ -12,7 +12,7 @@ const KOLOM_TYPE = "Type verrichting";
 const CATEGORIE_RULES = {
     "Supermarkt": ["schelck huwaert", "okay", "colruyt", "carrefour", "aldi","CO&GO", "BON'AP", "delhaize"],
     "Creche": ["disneyland"],
-    "Automaat werk": ["selecta boom"]
+    "Automaat werk": ["SELECTA 2850 BOOM"]
 };
 
 let alleData = []; 

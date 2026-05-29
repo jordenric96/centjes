@@ -25,20 +25,16 @@ const CATEGORIE_RULES = {
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara"],
     "Kapper": ["Hair"],
     "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo"],
-    "AG insurance": ["AG"],
-    "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
-    "Water, Gas & Elektriciteit": ["water", "elektriciteit", "gas", "fluvius", "engie", "luminus", "farys", "pidpa", "watergroep"],
-    "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
+  
 };
 
 // --- NIEUW: VASTE KOSTEN LIJST ---
 // Alles wat hierin staat telt op als 'Vast', de rest is automatisch 'Variabel'.
 const VASTE_CATEGORIEEN = [
-    "Creche",
-    "AG insurance",
-    "Lening",
-    "Water, Gas & Elektriciteit",
-    "Internet & Telecom"
+    "AG insurance": ["AG"],
+    "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
+    "Water, Gas & Elektriciteit": ["water", "watergroep"],
+    "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 ];
 
 let alleData = []; 

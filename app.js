@@ -17,7 +17,7 @@ const CATEGORIE_RULES = {
     "Dreamland": ["Dreamland"],
     "Bol": ["Bol"],
     "Broodjes": ["PRINSKE"],
-    "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN"],
+    "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],
     "Apotheek": ["Apotheek"], 
     "Bakker": ["Exotica", "Locus"],
     "Tanken": ["Dats", "Total"],

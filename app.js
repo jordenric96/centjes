@@ -27,6 +27,7 @@ const CATEGORIE_RULES = {
      "Kapper": ["Hair"],
     "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo"],
     "AG insurance": ["AG"],
+    "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
 };
 
 let alleData = []; 

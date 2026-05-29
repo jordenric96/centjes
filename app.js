@@ -14,7 +14,9 @@ const CATEGORIE_RULES = {
     "Creche": ["disneyland"],
     "Automaat werk": ["SELECTA 2850 BOOM"],
      "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"],
-    "Bouwmarkt": ["Gamma", "Brico"]
+    "Bouwmarkt": ["Gamma", "Brico"],
+    "Dreamland": ["Dreamland"],
+    "Bol": ["Bol"]
 };
 
 let alleData = []; 

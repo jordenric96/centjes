@@ -73,11 +73,23 @@
         </div>
 
         <section class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
                 <h3 style="margin-bottom: 0;">Transacties in dit jaar</h3>
-                <label style="cursor: pointer; font-weight: 600; color: var(--primary); background: #e1e8ed; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
-                    <input type="checkbox" id="toonEnkelOverig" style="margin-right: 5px;"> Toon enkel nog in te delen (Overig)
-                </label>
+                
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                    <label style="font-weight: 600; color: var(--primary); font-size: 0.9rem;">
+                        Sorteer op:
+                        <select id="sorteerSelect" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; outline: none; margin-left: 5px;">
+                            <option value="datum">Datum (Nieuwste eerst)</option>
+                            <option value="uitgaven">Grootste uitgaven eerst</option>
+                            <option value="inkomsten">Grootste inkomsten eerst</option>
+                        </select>
+                    </label>
+
+                    <label style="cursor: pointer; font-weight: 600; color: var(--primary); background: #e1e8ed; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
+                        <input type="checkbox" id="toonEnkelOverig" style="margin-right: 5px;"> Toon enkel nog in te delen (Overig)
+                    </label>
+                </div>
             </div>
             <div class="tabel-wrapper grote-tabel">
                 <table id="dataTable">

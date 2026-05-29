@@ -28,6 +28,7 @@ const CATEGORIE_RULES = {
     "Kine": ["kine"],
     "Kine": ["Action"],
     "Pluspas": ["Pluspas", "Corporate Benefits"],
+    "Haviland": ["Haviland"],
     
     // Hieronder staan je vaste kosten inclusief hun zoekwoorden:
     "AG insurance": ["AG"],

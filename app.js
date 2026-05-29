@@ -14,7 +14,7 @@ const CATEGORIE_RULES = {
     "Automaat werk": ["SELECTA 2850 BOOM"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"],
     "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria"], 
-    "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM"],
+    "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA"],
     "Dreamland": ["Dreamland"],
     "Bol": ["Bol"],
     "Broodjes": ["PRINSKE"],

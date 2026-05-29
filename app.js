@@ -24,7 +24,7 @@ const CATEGORIE_RULES = {
     "Sushi": ["Sushi"],
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara"],
     "Kapper": ["Hair"],
-    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK"],
+    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon"],
     "Kine": ["kine"],
     // Hieronder staan je vaste kosten inclusief hun zoekwoorden:
     "AG insurance": ["AG"],

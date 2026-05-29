@@ -17,7 +17,7 @@ const CATEGORIE_RULES = {
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA"],
     "Dreamland": ["Dreamland"],
     "Bol": ["Bol"],
-    "Ijsjes": ["Ijs", "Krijmerie", "Martinique"],
+    "Ijsjes": ["Ijs", "Krijmerie", "Martinique", "Choconelly"],
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],
     "Apotheek": ["Apotheek", "NEWPHARMA", "Pharma", "FARMALINE"], 

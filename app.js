@@ -33,6 +33,7 @@ const CATEGORIE_RULES = {
     "AG insurance": ["AG"],
     "Bloemen": ["Bloomon"],
     "Bril": ["Optiek"],
+     "Bril": ["D EN M NV"],
     "Ketel onderhoud": ["Vaillant"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
     "Water, Gas & Elektriciteit": ["water", "watergroep", "LUMINUS", "ELECTRABEL"],

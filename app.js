@@ -1,7 +1,6 @@
 // --- 1. CONFIGURATIE ---
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 
-// Kolomnamen exact zoals in jouw bank-export
 const KOLOM_DATUM = "Uitvoeringsdatum"; 
 const KOLOM_BEDRAG = "Bedrag"; 
 const KOLOM_TEGENPARTIJ = "Naam van de tegenpartij";
@@ -9,20 +8,15 @@ const KOLOM_MEDEDELING = "Mededeling";
 const KOLOM_DETAILS = "Details";
 const KOLOM_TYPE = "Type verrichting";
 
-// --- 2. CATEGORIE REGELS (Pas dit aan en breid dit uit!) ---
-// Het script zoekt of een van deze woorden voorkomt in de transactiegegevens (hoofdletterongevoelig)
+// --- 2. JOUW CATEGORIE REGELS ---
 const CATEGORIE_RULES = {
-    "Boodschappen": ["colruyt", "delhaize", "albert heijn", "carrefour", "lidl", "aldi", "bakkers", "slager"],
-    "Kinderen & Gezin": ["ricour", "school", "opvang", "speelgoed", "kinderbijslag"],
-    "Vaste Lasten": ["belfius", "kbc", "cm", "engie", "fluvius", "telenet", "proximus", "huur", "verzekering"],
-    "Auto & Transport": ["total", "q8", "shell", "tank", "nmbs", "delijn", "parkeren"],
-    "Vrije Tijd & Sport": ["padel", "restaurant", "café", "fortnite", "ps5", "decathlon", "cinema"],
-    "Inkomsten / Loon": ["wedde", "salaris", "loon", "storting", "terugbetaling"]
+    "Supermarkt": ["schelck huwaert", "okay", "colruyt", "carrefour", "aldi", "delhaize"],
+    "Creche": ["disneyland"],
+    "Automaat werk": ["selecta boom"]
 };
 
 let alleData = []; 
 
-// Start het ophalen van de data zodra het script geladen is
 Papa.parse(sheetUrl, {
     download: true,
     header: true,
@@ -43,7 +37,6 @@ Papa.parse(sheetUrl, {
 
 // --- 3. INTELLIGENTE CATEGORISERING ---
 function bepaalCategorie(rij) {
-    // Voeg alle relevante tekstvelden samen om in te zoeken
     const tekstOmInTeZoeken = `
         ${rij[KOLOM_TEGENPARTIJ] || ''} 
         ${rij[KOLOM_MEDEDELING] || ''} 
@@ -51,16 +44,13 @@ function bepaalCategorie(rij) {
         ${rij[KOLOM_TYPE] || ''}
     `.toLowerCase();
 
-    // Loop door alle categorieën en hun trefwoorden heen
     for (const [categorie, trefwoorden] of Object.entries(CATEGORIE_RULES)) {
         for (const trefwoord of trefwoorden) {
             if (tekstOmInTeZoeken.includes(trefwoord.toLowerCase())) {
-                return categorie; // Match gevonden! Return direct de categorie.
+                return categorie;
             }
         }
     }
-
-    // Geen match? Dan valt het onder Overig
     return "Overig";
 }
 
@@ -69,8 +59,8 @@ function haalJaar(datumStr) {
     if (!datumStr) return "Onbekend";
     const parts = String(datumStr).split(/[-/]/);
     if (parts.length >= 3) {
-        if (parts[0].length === 4) return parts[0]; // YYYY-MM-DD
-        return parts[2]; // DD-MM-YYYY
+        if (parts[0].length === 4) return parts[0]; 
+        return parts[2]; 
     }
     return "Onbekend";
 }
@@ -98,7 +88,7 @@ function initialiseerJaren() {
 
     const jarenArray = Array.from(jarenSet).sort().reverse();
     const select = document.getElementById('jaarSelect');
-    select.innerHTML = ''; // Maak leeg
+    select.innerHTML = ''; 
     
     jarenArray.forEach(jaar => {
         const option = document.createElement('option');
@@ -107,16 +97,30 @@ function initialiseerJaren() {
         select.appendChild(option);
     });
 
+    // Luisteraars voor zowel de jaardropdown als de nieuwe checkbox
     select.addEventListener('change', updateDashboard);
+    document.getElementById('toonEnkelOverig').addEventListener('change', updateDashboard);
+    
     updateDashboard();
 }
 
 function updateDashboard() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
-    const gefilterdeData = alleData.filter(rij => haalJaar(rij[KOLOM_DATUM]) === gekozenJaar);
+    const filterOpOverig = document.getElementById('toonEnkelOverig').checked;
     
-    verwerkData(gefilterdeData);
-    bouwTransactieTabel(gefilterdeData);
+    // Haal alle data op voor het gekozen jaar
+    const jaardata = alleData.filter(rij => haalJaar(rij[KOLOM_DATUM]) === gekozenJaar);
+    
+    // Verwerk de statistieken en kaarten áltijd met de volledige jaardata
+    verwerkData(jaardata);
+    
+    // De tabel onderaan mag wél gefilterd worden als het vinkje aanstaat
+    let tabelData = jaardata;
+    if (filterOpOverig) {
+        tabelData = jaardata.filter(rij => bepaalCategorie(rij) === "Overig");
+    }
+    
+    bouwTransactieTabel(tabelData);
 }
 
 function verwerkData(data) {
@@ -131,8 +135,6 @@ function verwerkData(data) {
 
         const datum = rij[KOLOM_DATUM];
         const maandJaar = haalMaandJaar(datum);
-        
-        // Bepaal de categorie op basis van de ingebouwde regels
         const categorie = bepaalCategorie(rij);
 
         if (bedrag > 0) jaarIn += bedrag;
@@ -142,14 +144,12 @@ function verwerkData(data) {
         if (bedrag > 0) maandData[maandJaar].in += bedrag;
         else maandData[maandJaar].uit += bedrag;
 
-        // Categorie totalen berekenen (alleen voor uitgaven)
         if (bedrag < 0) {
             if (!categorieData[categorie]) categorieData[categorie] = 0;
             categorieData[categorie] += Math.abs(bedrag);
         }
     });
 
-    // Update HTML Jaar kaarten
     document.getElementById('jaarInkomsten').innerText = formatBedrag(jaarIn);
     document.getElementById('jaarUitgaven').innerText = formatBedrag(jaarUit);
     
@@ -159,7 +159,6 @@ function verwerkData(data) {
     if (balans > 0) balansEl.className = 'bedrag positief';
     else if (balans < 0) balansEl.className = 'bedrag negatief';
 
-    // Update HTML Maanden tabel
     let maandHtml = '';
     Object.keys(maandData).sort().reverse().forEach(mnd => {
         const md = maandData[mnd];
@@ -175,7 +174,6 @@ function verwerkData(data) {
     });
     document.getElementById('maandBody').innerHTML = maandHtml;
 
-    // Update HTML Categorieën tabel
     let catHtml = '';
     Object.keys(categorieData).sort((a, b) => categorieData[b] - categorieData[a]).forEach(cat => {
         catHtml += `<tr>
@@ -189,20 +187,18 @@ function verwerkData(data) {
 function bouwTransactieTabel(data) {
     if(data.length === 0) {
         document.getElementById('tableHead').innerHTML = '';
-        document.getElementById('tableBody').innerHTML = '<tr><td>Geen transacties gevonden voor dit jaar.</td></tr>';
+        document.getElementById('tableBody').innerHTML = '<tr><td style="padding: 20px; text-align: center;">Geen transacties gevonden voor deze selectie.</td></tr>';
         return;
     }
 
     const headers = Object.keys(data[0]);
-    
     let headerHtml = '<tr>';
     headers.forEach(h => { headerHtml += `<th>${h}</th>`; });
-    // Voeg handmatig een extra header toe voor de berekende categorie
     headerHtml += `<th>Berekende Categorie</th></tr>`;
     document.getElementById('tableHead').innerHTML = headerHtml;
 
     let bodyHtml = '';
-    const toonData = data.slice(0, 150); // Beperk tot laatste 150 rijen voor snelheid
+    const toonData = data.slice(0, 150); 
     
     toonData.forEach(rij => {
         bodyHtml += '<tr>';
@@ -218,9 +214,12 @@ function bouwTransactieTabel(data) {
             bodyHtml += `<td>${waarde !== null && waarde !== undefined ? waarde : ''}</td>`;
         });
         
-        // Voeg de berekende categorie als extra cel toe aan het einde van de rij
         const berekendeCat = bepaalCategorie(rij);
-        bodyHtml += `<td><span class="status-badge" style="background-color: #f0f3f4; color: #34495e;">${berekendeCat}</span></td>`;
+        // Geef 'Overig' een iets opvallender kleurtje om het makkelijker te scannen
+        const bgKleur = berekendeCat === "Overig" ? "#ffeedd" : "#e1e8ed";
+        const tekstKleur = berekendeCat === "Overig" ? "#d35400" : "#34495e";
+        
+        bodyHtml += `<td><span class="status-badge" style="background-color: ${bgKleur}; color: ${tekstKleur};">${berekendeCat}</span></td>`;
         bodyHtml += '</tr>';
     });
     document.getElementById('tableBody').innerHTML = bodyHtml;

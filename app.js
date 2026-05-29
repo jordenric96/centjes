@@ -17,7 +17,7 @@ const CATEGORIE_RULES = {
     "Dreamland": ["Dreamland"],
     "Bol": ["Bol"],
     "Broodjes": ["PRINSKE"],
-    "Meubelwinkel": ["Jysk", "Ikea"],
+    "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN"],
     "Apotheek": ["Apotheek"], 
     "Bakker": ["Exotica", "Locus"],
     "Tanken": ["Dats", "Total"],
@@ -25,6 +25,7 @@ const CATEGORIE_RULES = {
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara"],
     "Kapper": ["Hair"],
     "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo"],
+    "Kine": ["kine"],
     // Hieronder staan je vaste kosten inclusief hun zoekwoorden:
     "AG insurance": ["AG"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 

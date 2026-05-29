@@ -7,7 +7,6 @@ const KOLOM_MEDEDELING = "Mededeling";
 const KOLOM_DETAILS = "Details";
 const KOLOM_TYPE = "Type verrichting";
 
-// --- JOUW CATEGORIEËN (HIER MOETEN ALLE WOORDEN IN) ---
 const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "FLAVOR SHOP", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH"],
     "Creche": ["disneyland"],
@@ -25,20 +24,15 @@ const CATEGORIE_RULES = {
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara", "DEDOLES"],
     "Kapper": ["Hair", "BLONDES & BROWNIES"],
     "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon", "Iboya"],
-    "Kine": ["kine", "KINEPRAKTIJK"],
-    "Kine": ["Action"],
+    "Kine": ["kine", "Action"], // Samengevoegd voor efficiëntie
     "Pluspas": ["Pluspas", "Corporate Benefits"],
     "Haviland": ["Haviland"],
-    
-    // Hieronder staan je vaste kosten inclusief hun zoekwoorden:
     "AG insurance": ["AG"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
     "Water, Gas & Elektriciteit": ["water", "watergroep", "LUMINUS", "ELECTRABEL"],
     "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 };
 
-// --- NIEUW: VASTE KOSTEN LIJST (HIER ENKEL DE NAMEN VAN DE CATEGORIEËN) ---
-// Alles wat hierin staat telt op als 'Vast', de rest is automatisch 'Variabel'.
 const VASTE_CATEGORIEEN = [
     "AG insurance",
     "Lening",
@@ -46,7 +40,11 @@ const VASTE_CATEGORIEEN = [
     "Internet & Telecom",
     "Haviland"
 ];
+
 let alleData = []; 
+// Globale variabelen voor grafieken zodat we ze kunnen updaten
+let mijnMaandGrafiek = null;
+let mijnCatGrafiek = null;
 
 Papa.parse(sheetUrl, {
     download: true,
@@ -94,12 +92,13 @@ function haalJaar(datumStr) {
     return "Onbekend";
 }
 
-function haalMaandJaar(datumStr) {
+// Aangepast om correct te sorteren in grafieken (YYYY-MM)
+function haalMaandJaarSortering(datumStr) {
     if (!datumStr) return "Onbekend";
     const parts = String(datumStr).split(/[-/]/);
     if (parts.length >= 3) {
-        if (parts[0].length === 4) return `${parts[1]}-${parts[0]}`; 
-        return `${parts[1]}-${parts[2]}`; 
+        if (parts[0].length === 4) return `${parts[0]}-${parts[1]}`; // YYYY-MM
+        return `${parts[2]}-${parts[1]}`; // YYYY-MM
     }
     return "Onbekend";
 }
@@ -179,7 +178,8 @@ function updateDashboard() {
 
 function verwerkData(data) {
     let jaarIn = 0, jaarUit = 0;
-    let vastTotaal = 0, variabelTotaal = 0; // Nieuwe tellers
+    let vastTotaal = 0, variabelTotaal = 0;
+    let grootsteUitgave = 0; 
     const maandData = {};
     const categorieData = {};
 
@@ -189,15 +189,16 @@ function verwerkData(data) {
         if (isNaN(bedrag) || bedrag === null) return;
 
         const datum = rij[KOLOM_DATUM];
-        const maandJaar = haalMaandJaar(datum);
+        const maandJaar = haalMaandJaarSortering(datum);
         const categorie = bepaalCategorie(rij);
 
         if (bedrag > 0) {
             jaarIn += bedrag;
         } else {
             jaarUit += bedrag;
+            // Bepaal grootste uitgave (is negatief, dus we zoeken de kleinste waarde)
+            if (bedrag < grootsteUitgave) grootsteUitgave = bedrag;
             
-            // Controleer of de uitgave VAST of VARIABEL is
             if (VASTE_CATEGORIEEN.includes(categorie)) {
                 vastTotaal += Math.abs(bedrag);
             } else {
@@ -215,27 +216,38 @@ function verwerkData(data) {
         }
     });
 
+    // --- BASIS STATS UPDATE ---
     document.getElementById('jaarInkomsten').innerText = formatBedrag(jaarIn);
     document.getElementById('jaarUitgaven').innerText = formatBedrag(jaarUit);
-    
-    // Update de nieuwe HTML velden voor Vast en Variabel
     document.getElementById('vastTotaal').innerText = formatBedrag(vastTotaal);
     document.getElementById('variabelTotaal').innerText = formatBedrag(variabelTotaal);
     
     const balans = jaarIn + jaarUit;
     const balansEl = document.getElementById('jaarBalans');
     balansEl.innerText = (balans < 0 ? "- " : "") + formatBedrag(balans);
-    if (balans > 0) balansEl.className = 'bedrag positief';
-    else if (balans < 0) balansEl.className = 'bedrag negatief';
+    balansEl.className = balans > 0 ? 'bedrag positief' : (balans < 0 ? 'bedrag negatief' : 'bedrag neutraal');
 
+    // --- NIEUWE QUICK STATS ---
+    const aantalMaanden = Object.keys(maandData).length || 1;
+    document.getElementById('statGemiddelde').innerText = formatBedrag(jaarUit / aantalMaanden);
+    document.getElementById('statMax').innerText = formatBedrag(grootsteUitgave);
+
+    // --- TABELLEN BOUWEN ---
     let maandHtml = '';
-    Object.keys(maandData).sort().reverse().forEach(mnd => {
+    // Maanden oplopend sorteren voor grafiek
+    const gesorteerdeMaanden = Object.keys(maandData).sort(); 
+    
+    // Voor tabel tonen we ze aflopend (nieuwste boven)
+    [...gesorteerdeMaanden].reverse().forEach(mnd => {
         const md = maandData[mnd];
         const mBalans = md.in + md.uit;
         let balansClass = mBalans >= 0 ? "tekst-positief" : "tekst-negatief";
         
+        // Maak weergave mooier (bijv 2025-01 -> 01-2025)
+        const mooieMaand = mnd.split('-')[1] + '-' + mnd.split('-')[0];
+
         maandHtml += `<tr>
-            <td><strong>${mnd}</strong></td>
+            <td><strong>${mooieMaand}</strong></td>
             <td class="tekst-positief">${formatBedrag(md.in)}</td>
             <td class="tekst-negatief">${formatBedrag(md.uit)}</td>
             <td class="${balansClass}"><strong>${(mBalans < 0 ? "- " : "")}${formatBedrag(mBalans)}</strong></td>
@@ -244,19 +256,83 @@ function verwerkData(data) {
     document.getElementById('maandBody').innerHTML = maandHtml;
 
     let catHtml = '';
-    Object.keys(categorieData).sort((a, b) => categorieData[b] - categorieData[a]).forEach(cat => {
+    const gesorteerdeCat = Object.keys(categorieData).sort((a, b) => categorieData[b] - categorieData[a]);
+    gesorteerdeCat.forEach(cat => {
         catHtml += `<tr>
             <td><strong>${cat}</strong></td>
             <td>${formatBedrag(categorieData[cat])}</td>
         </tr>`;
     });
     document.getElementById('categorieBody').innerHTML = catHtml;
+
+    // --- GRAFIEKEN TEKENEN ---
+    tekenGrafieken(maandData, gesorteerdeMaanden, categorieData, gesorteerdeCat);
+}
+
+function tekenGrafieken(maandData, gesorteerdeMaanden, categorieData, gesorteerdeCat) {
+    // 1. Maandelijkse Staafgrafiek
+    const ctxMaand = document.getElementById('maandGrafiek').getContext('2d');
+    if (mijnMaandGrafiek) mijnMaandGrafiek.destroy(); // Wis oude grafiek
+    
+    const maandLabels = gesorteerdeMaanden.map(m => m.split('-')[1] + '-' + m.split('-')[0]); // YYYY-MM -> MM-YYYY
+    const inData = gesorteerdeMaanden.map(m => maandData[m].in);
+    const uitData = gesorteerdeMaanden.map(m => Math.abs(maandData[m].uit));
+
+    mijnMaandGrafiek = new Chart(ctxMaand, {
+        type: 'bar',
+        data: {
+            labels: maandLabels,
+            datasets: [
+                { label: 'Inkomsten', data: inData, backgroundColor: '#059669', borderRadius: 4 },
+                { label: 'Uitgaven', data: uitData, backgroundColor: '#dc2626', borderRadius: 4 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // 2. Categorie Donut-grafiek
+    const ctxCat = document.getElementById('categorieGrafiek').getContext('2d');
+    if (mijnCatGrafiek) mijnCatGrafiek.destroy(); // Wis oude grafiek
+
+    // Beperk tot top 8 categorieën voor overzichtelijkheid, rest is 'Overig'
+    let topLabels = gesorteerdeCat.slice(0, 8);
+    let topData = topLabels.map(cat => categorieData[cat]);
+    
+    if (gesorteerdeCat.length > 8) {
+        let restTotaal = 0;
+        for (let i = 8; i < gesorteerdeCat.length; i++) {
+            restTotaal += categorieData[gesorteerdeCat[i]];
+        }
+        topLabels.push('Andere kleine cats');
+        topData.push(restTotaal);
+    }
+
+    mijnCatGrafiek = new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+            labels: topLabels,
+            datasets: [{
+                data: topData,
+                backgroundColor: [
+                    '#3b82f6', '#f59e0b', '#10b981', '#ef4444', 
+                    '#8b5cf6', '#ec4899', '#06b6d4', '#64748b', '#cbd5e1'
+                ],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right' } }
+        }
+    });
 }
 
 function bouwTransactieTabel(data) {
     if(data.length === 0) {
         document.getElementById('tableHead').innerHTML = '';
-        document.getElementById('tableBody').innerHTML = '<tr><td style="padding: 20px; text-align: center;">Geen transacties gevonden voor deze selectie.</td></tr>';
+        document.getElementById('tableBody').innerHTML = '<tr><td style="padding: 20px; text-align: center;">Geen transacties gevonden.</td></tr>';
         return;
     }
 

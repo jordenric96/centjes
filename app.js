@@ -20,7 +20,8 @@ const CATEGORIE_RULES = {
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea"],
     "Apotheek": ["Apotheek"], 
-    "Bakker": ["Exotica", "Locus"] 
+    "Bakker": ["Exotica", "Locus"],
+    "Sushi": ["Sushi"] 
 };
 
 let alleData = []; 

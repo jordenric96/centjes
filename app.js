@@ -13,7 +13,7 @@ const CATEGORIE_RULES = {
     "Creche": ["disneyland"],
     "Automaat werk": ["SELECTA 2850 BOOM"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"],
-    "Bouwmarkt": ["Gamma", "Brico"],
+    "Bouwmarkt": ["Gamma", "Brico", "FLORALUX"],
     "Dreamland": ["Dreamland"],
     "Bol": ["Bol"],
     "Broodjes": ["PRINSKE"],
@@ -29,7 +29,7 @@ const CATEGORIE_RULES = {
     // Hieronder staan je vaste kosten inclusief hun zoekwoorden:
     "AG insurance": ["AG"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
-    "Water, Gas & Elektriciteit": ["water", "watergroep"],
+    "Water, Gas & Elektriciteit": ["water", "watergroep", "LUMINUS"],
     "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 };
 

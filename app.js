@@ -32,23 +32,24 @@ const CATEGORIE_RULES = {
     "Haviland": ["Haviland"],
     "AG insurance": ["AG"],
     "Bloemen": ["Bloomon"],
-    "Bril": ["Optiek"],
-     "Bril": ["D EN M NV"],
+    "Bril": ["Optiek", "D EN M NV"], // Samengevoegd zodat beide werken!
     "Ketel onderhoud": ["Vaillant"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
     "Water, Gas & Elektriciteit": ["water", "watergroep", "LUMINUS", "ELECTRABEL"],
     "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 };
 
-// --- 2. DE HOOFDGROEPEN ---
+// --- 2. JOUW NIEUWE HOOFDGROEPEN ---
 const HOOFD_GROEPEN = {
-    "Eten & Drinken": ["Supermarkt", "Frietjes", "Restaurant", "Broodjes", "Bakker", "Sushi"],
-    "Wonen & Energie": ["Bouwmarkt", "Meubelwinkel", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"],
-    "Vervoer & Auto": ["Tanken"],
-    "Gezondheid & Zorg": ["Apotheek", "Kapper", "Kine"],
-    "Vrije Tijd & Kleding": ["Hobby's", "Dreamland", "Bol", "Kleren"],
-    "Kinderen": ["Creche"],
-    "Werk & Verzekeringen": ["Automaat werk", "Pluspas", "AG insurance"]
+    "Eten en drinken": ["Supermarkt", "Frietjes", "Restaurant", "Ijsjes", "Broodjes", "Bakker", "Sushi"],
+    "Huis": ["Bouwmarkt", "Meubelwinkel", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland", "Ketel onderhoud", "Bloemen"],
+    "Verzorging": ["Apotheek", "Kapper", "Kine", "Bril"],
+    "Verzekeringen": ["AG insurance"],
+    "Werk": ["Automaat werk", "Pluspas"],
+    "Hobby's": ["Hobby's"],
+    "Lou & Noé": ["Creche", "Dreamland"],
+    "Auto": ["Tanken"],
+    "Shoppen & Kleding": ["Kleren", "Bol"] // De extra groep voor je online shopping!
 };
 
 // --- 3. VASTE KOSTEN LIJST ---
@@ -116,15 +117,11 @@ function updateDashboard() {
     const filterOpOverig = document.getElementById('toonEnkelOverig').checked;
     const sorteerKeuze = document.getElementById('sorteerSelect').value;
     
-    // FILTER: Jaartal selecteren én de spaarrekening uitsluiten!
     const jaardata = alleData.filter(rij => {
         const isJuisteJaar = haalJaar(rij[KOLOM_DATUM]) === gekozenJaar;
-        
-        // Zoek naar de naam (in kleine letters om fouten te voorkomen)
         const tegenpartij = String(rij[KOLOM_TEGENPARTIJ] || "").toLowerCase();
         const mededeling = String(rij[KOLOM_MEDEDELING] || "").toLowerCase();
         
-        // Als het een overschrijving naar de spaarrekening is, negeren we de rij volledig (return false)
         if (tegenpartij.includes("ricour-de bruyn") || mededeling.includes("ricour-de bruyn")) {
             return false; 
         }
@@ -303,7 +300,7 @@ function tekenGrafieken(mndData, grpData, gesorteerdeMaanden) {
     if (mijnCatGrafiek) mijnCatGrafiek.destroy();
     
     const frisseKleuren = [
-        '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A733FF', '#FF3366', '#00E5FF', '#999999'  
+        '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A733FF', '#FF3366', '#00E5FF', '#999999', '#4CAF50'
     ];
 
     const gesorteerdeGroepen = Object.keys(grpData).sort((a, b) => grpData[b] - grpData[a]);

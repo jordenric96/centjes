@@ -32,7 +32,7 @@ const CATEGORIE_RULES = {
     "Haviland": ["Haviland"],
     "AG insurance": ["AG"],
     "Bloemen": ["Bloomon"],
-    "Bril": ["Optiek", "D EN M NV"], // Samengevoegd zodat beide werken!
+    "Bril": ["Optiek", "D EN M NV", "DR. PEETERMANS"], // Samengevoegd zodat beide werken!
     "Ketel onderhoud": ["Vaillant"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
     "Water, Gas & Elektriciteit": ["water", "watergroep", "LUMINUS", "ELECTRABEL"],

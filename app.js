@@ -111,7 +111,21 @@ function updateDashboard() {
     const filterOpOverig = document.getElementById('toonEnkelOverig').checked;
     const sorteerKeuze = document.getElementById('sorteerSelect').value;
     
-    const jaardata = alleData.filter(rij => haalJaar(rij[KOLOM_DATUM]) === gekozenJaar);
+    // FILTER: Jaartal selecteren én de spaarrekening uitsluiten!
+    const jaardata = alleData.filter(rij => {
+        const isJuisteJaar = haalJaar(rij[KOLOM_DATUM]) === gekozenJaar;
+        
+        // Zoek naar de naam (in kleine letters om fouten te voorkomen)
+        const tegenpartij = String(rij[KOLOM_TEGENPARTIJ] || "").toLowerCase();
+        const mededeling = String(rij[KOLOM_MEDEDELING] || "").toLowerCase();
+        
+        // Als het een overschrijving naar de spaarrekening is, negeren we de rij volledig (return false)
+        if (tegenpartij.includes("ricour-de bruyn") || mededeling.includes("ricour-de bruyn")) {
+            return false; 
+        }
+        
+        return isJuisteJaar;
+    });
     
     verwerkData(jaardata, gekozenJaar);
     
@@ -225,7 +239,6 @@ function bouwDrillDownTabel(breakdown, totalen) {
     container.innerHTML = '';
 
     Object.keys(totalen).sort((a,b) => totalen[b] - totalen[a]).forEach(hg => {
-        // Hoofdgroep Rij
         const hgRow = document.createElement('tr');
         hgRow.className = 'hg-row';
         hgRow.style.cursor = 'pointer';
@@ -233,23 +246,20 @@ function bouwDrillDownTabel(breakdown, totalen) {
         hgRow.innerHTML = `<td><span class="pijl" style="display:inline-block; transition: transform 0.2s; margin-right:8px; font-size:0.8rem;">▶</span> <strong>${hg}</strong></td><td style="text-align: right;"><strong>${formatBedrag(totalen[hg])}</strong></td>`;
         container.appendChild(hgRow);
 
-        // Verzamel de subrijen in een array
         const subRows = [];
         Object.keys(breakdown[hg]).sort((a,b) => breakdown[hg][b] - breakdown[hg][a]).forEach(sub => {
             const subRow = document.createElement('tr');
             subRow.className = 'sub-row';
-            subRow.style.display = 'none'; // Standaard verborgen
+            subRow.style.display = 'none'; 
             subRow.style.backgroundColor = '#ffffff';
             subRow.innerHTML = `<td style="padding-left: 30px; color: #64748b; border-left: 3px solid #e2e8f0;">${sub}</td><td style="text-align: right; color: #64748b;">${formatBedrag(breakdown[hg][sub])}</td>`;
             container.appendChild(subRow);
             subRows.push(subRow);
         });
 
-        // Toggle logica
         hgRow.onclick = () => {
             const isExpanded = hgRow.classList.contains('expanded');
             
-            // Sluit eerst alles voor een net overzicht
             document.querySelectorAll('.hg-row').forEach(r => {
                 r.classList.remove('expanded');
                 const p = r.querySelector('.pijl');
@@ -257,7 +267,6 @@ function bouwDrillDownTabel(breakdown, totalen) {
             });
             document.querySelectorAll('.sub-row').forEach(r => r.style.display = 'none');
             
-            // Open de geklikte rij als deze nog niet open was
             if (!isExpanded) {
                 hgRow.classList.add('expanded');
                 const p = hgRow.querySelector('.pijl');

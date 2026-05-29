@@ -1,4 +1,3 @@
-// --- 1. CONFIGURATIE ---
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 
 const KOLOM_DATUM = "Uitvoeringsdatum"; 
@@ -8,12 +7,12 @@ const KOLOM_MEDEDELING = "Mededeling";
 const KOLOM_DETAILS = "Details";
 const KOLOM_TYPE = "Type verrichting";
 
-// --- 2. JOUW CATEGORIE REGELS ---
+// --- JOUW CATEGORIEËN ---
 const CATEGORIE_RULES = {
-    "Supermarkt": ["huwaert", "FLAVOR SHOP", "Kruidvat", "okay", "colruyt", "carrefour", "aldi","CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY"],
+    "Supermarkt": ["huwaert", "FLAVOR SHOP", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY"],
     "Creche": ["disneyland"],
     "Automaat werk": ["SELECTA 2850 BOOM"],
-     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"],
+    "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"],
     "Bouwmarkt": ["Gamma", "Brico"],
     "Dreamland": ["Dreamland"],
     "Bol": ["Bol"],
@@ -21,14 +20,26 @@ const CATEGORIE_RULES = {
     "Meubelwinkel": ["Jysk", "Ikea"],
     "Apotheek": ["Apotheek"], 
     "Bakker": ["Exotica", "Locus"],
-    "tanken": ["Dats", "Total"],
+    "Tanken": ["Dats", "Total"],
     "Sushi": ["Sushi"],
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara"],
-     "Kapper": ["Hair"],
+    "Kapper": ["Hair"],
     "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo"],
     "AG insurance": ["AG"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
+    "Water, Gas & Elektriciteit": ["water", "elektriciteit", "gas", "fluvius", "engie", "luminus", "farys", "pidpa", "watergroep"],
+    "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 };
+
+// --- NIEUW: VASTE KOSTEN LIJST ---
+// Alles wat hierin staat telt op als 'Vast', de rest is automatisch 'Variabel'.
+const VASTE_CATEGORIEEN = [
+    "Creche",
+    "AG insurance",
+    "Lening",
+    "Water, Gas & Elektriciteit",
+    "Internet & Telecom"
+];
 
 let alleData = []; 
 
@@ -50,7 +61,6 @@ Papa.parse(sheetUrl, {
     }
 });
 
-// --- 3. INTELLIGENTE CATEGORISERING ---
 function bepaalCategorie(rij) {
     const tekstOmInTeZoeken = `
         ${rij[KOLOM_TEGENPARTIJ] || ''} 
@@ -69,7 +79,6 @@ function bepaalCategorie(rij) {
     return "Overig";
 }
 
-// --- 4. DATA VERWERKING & LOGICA ---
 function haalJaar(datumStr) {
     if (!datumStr) return "Onbekend";
     const parts = String(datumStr).split(/[-/]/);
@@ -112,9 +121,9 @@ function initialiseerJaren() {
         select.appendChild(option);
     });
 
-    // Luisteraars voor zowel de jaardropdown als de nieuwe checkbox
     select.addEventListener('change', updateDashboard);
     document.getElementById('toonEnkelOverig').addEventListener('change', updateDashboard);
+    document.getElementById('sorteerSelect').addEventListener('change', updateDashboard);
     
     updateDashboard();
 }
@@ -122,24 +131,50 @@ function initialiseerJaren() {
 function updateDashboard() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
     const filterOpOverig = document.getElementById('toonEnkelOverig').checked;
+    const sorteerKeuze = document.getElementById('sorteerSelect').value;
     
-    // Haal alle data op voor het gekozen jaar
     const jaardata = alleData.filter(rij => haalJaar(rij[KOLOM_DATUM]) === gekozenJaar);
     
-    // Verwerk de statistieken en kaarten áltijd met de volledige jaardata
     verwerkData(jaardata);
     
-    // De tabel onderaan mag wél gefilterd worden als het vinkje aanstaat
-    let tabelData = jaardata;
+    let tabelData = [...jaardata];
+    
     if (filterOpOverig) {
-        tabelData = jaardata.filter(rij => bepaalCategorie(rij) === "Overig");
+        tabelData = tabelData.filter(rij => bepaalCategorie(rij) === "Overig");
     }
+
+    tabelData.sort((a, b) => {
+        let bedragA = a[KOLOM_BEDRAG];
+        let bedragB = b[KOLOM_BEDRAG];
+        
+        if (typeof bedragA === 'string') bedragA = parseFloat(bedragA.replace(',', '.'));
+        if (typeof bedragB === 'string') bedragB = parseFloat(bedragB.replace(',', '.'));
+        bedragA = isNaN(bedragA) ? 0 : bedragA;
+        bedragB = isNaN(bedragB) ? 0 : bedragB;
+
+        if (sorteerKeuze === "uitgaven") {
+            return bedragA - bedragB;
+        } else if (sorteerKeuze === "inkomsten") {
+            return bedragB - bedragA;
+        } else {
+            const parseDatum = (d) => {
+                if (!d) return 0;
+                const p = String(d).split(/[-/]/);
+                if (p.length === 3) {
+                    return p[0].length === 4 ? new Date(`${p[0]}-${p[1]}-${p[2]}`).getTime() : new Date(`${p[2]}-${p[1]}-${p[0]}`).getTime();
+                }
+                return 0;
+            };
+            return parseDatum(b[KOLOM_DATUM]) - parseDatum(a[KOLOM_DATUM]);
+        }
+    });
     
     bouwTransactieTabel(tabelData);
 }
 
 function verwerkData(data) {
     let jaarIn = 0, jaarUit = 0;
+    let vastTotaal = 0, variabelTotaal = 0; // Nieuwe tellers
     const maandData = {};
     const categorieData = {};
 
@@ -152,8 +187,18 @@ function verwerkData(data) {
         const maandJaar = haalMaandJaar(datum);
         const categorie = bepaalCategorie(rij);
 
-        if (bedrag > 0) jaarIn += bedrag;
-        else jaarUit += bedrag;
+        if (bedrag > 0) {
+            jaarIn += bedrag;
+        } else {
+            jaarUit += bedrag;
+            
+            // Controleer of de uitgave VAST of VARIABEL is
+            if (VASTE_CATEGORIEEN.includes(categorie)) {
+                vastTotaal += Math.abs(bedrag);
+            } else {
+                variabelTotaal += Math.abs(bedrag);
+            }
+        }
 
         if (!maandData[maandJaar]) maandData[maandJaar] = { in: 0, uit: 0 };
         if (bedrag > 0) maandData[maandJaar].in += bedrag;
@@ -167,6 +212,10 @@ function verwerkData(data) {
 
     document.getElementById('jaarInkomsten').innerText = formatBedrag(jaarIn);
     document.getElementById('jaarUitgaven').innerText = formatBedrag(jaarUit);
+    
+    // Update de nieuwe HTML velden voor Vast en Variabel
+    document.getElementById('vastTotaal').innerText = formatBedrag(vastTotaal);
+    document.getElementById('variabelTotaal').innerText = formatBedrag(variabelTotaal);
     
     const balans = jaarIn + jaarUit;
     const balansEl = document.getElementById('jaarBalans');
@@ -230,7 +279,6 @@ function bouwTransactieTabel(data) {
         });
         
         const berekendeCat = bepaalCategorie(rij);
-        // Geef 'Overig' een iets opvallender kleurtje om het makkelijker te scannen
         const bgKleur = berekendeCat === "Overig" ? "#ffeedd" : "#e1e8ed";
         const tekstKleur = berekendeCat === "Overig" ? "#d35400" : "#34495e";
         

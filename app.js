@@ -26,7 +26,7 @@ const CATEGORIE_RULES = {
     "Sushi": ["Sushi"],
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara", "DEDOLES"],
     "Kapper": ["Hair", "BLONDES & BROWNIES"],
-    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon", "Iboya", "TEAMSWEAR"],
+    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon", "Iboya", "TEAMSWEAR", "PASSA SPORTS"],
     "Kine": ["kine", "Action"],
     "Pluspas": ["Pluspas", "Corporate Benefi"],
     "Haviland": ["Haviland"],

@@ -29,7 +29,7 @@ const CATEGORIE_RULES = {
     // Hieronder staan je vaste kosten inclusief hun zoekwoorden:
     "AG insurance": ["AG"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
-    "Water, Gas & Elektriciteit": ["water", "watergroep", "LUMINUS"],
+    "Water, Gas & Elektriciteit": ["water", "watergroep", "LUMINUS", "ELECTRABEL"],
     "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 };
 

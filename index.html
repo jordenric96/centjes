@@ -53,7 +53,7 @@
                 <canvas id="maandGrafiek" height="200"></canvas>
             </section>
             <section class="card">
-                <h3>Verdeling Uitgaven</h3>
+                <h3>Verdeling Hoofdgroepen</h3>
                 <canvas id="categorieGrafiek" height="200"></canvas>
             </section>
         </div>
@@ -92,13 +92,26 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <h3>Uitgaven per Hoofdgroep</h3>
+                <div class="tabel-wrapper" style="margin-bottom: 20px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Groep</th>
+                                <th>Totaal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hoofdgroepBody"></tbody>
+                    </table>
+                </div>
 
-                <h3>Uitgaven per Categorie</h3>
+                <h3>Details per Sub-categorie</h3>
                 <div class="tabel-wrapper">
                     <table>
                         <thead>
                             <tr>
-                                <th>Categorie</th>
+                                <th>Sub-categorie</th>
                                 <th>Totaal</th>
                             </tr>
                         </thead>

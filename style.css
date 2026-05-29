@@ -157,3 +157,48 @@ tbody tr:hover {
 ::-webkit-scrollbar-thumb:hover {
     background: #95a5a6; 
 }
+
+/* --- EXTRA VOOR HEADER EN FILTER --- */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Zorgt dat het netjes breekt op mobiel */
+    gap: 15px;
+}
+
+.header-titel {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.filter-sectie {
+    background-color: var(--card-bg);
+    padding: 10px 15px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.filter-sectie label {
+    font-weight: 600;
+    color: var(--primary);
+    margin-right: 10px;
+}
+
+.filter-sectie select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+    background-color: white;
+    cursor: pointer;
+    color: var(--text-main);
+    outline: none;
+}
+
+.filter-sectie select:focus {
+    border-color: var(--accent);
+}

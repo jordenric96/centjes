@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financieel Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        /* Basis styling - voel je vrij om de CSS verder te finetunen */
+        :root {
+            --primary-color: #2c3e50;
+            --background: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #333;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 20px; 
+            background-color: var(--background); 
+            color: var(--text-main);
+            margin: 0;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: var(--card-bg); 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+        }
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        #status { 
+            font-style: italic; 
+            color: #666;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 6px;
+        }
+        /* Tabel styling */
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Gezamenlijk Overzicht</h2>
+    <div id="status">Gegevens ophalen uit de spreadsheet...</div>
+    
+    <div class="table-container">
+        <table id="dataTable">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Jouw specifieke Google Sheets CSV link
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
+
+    Papa.parse(sheetUrl, {
+        download: true,
+        header: true, // Zorgt ervoor dat de eerste rij als kolomnamen wordt gebruikt
+        dynamicTyping: true, // Zet getallen automatisch om naar nummers
+        skipEmptyLines: true, // Negeer lege rijen onderaan de sheet
+        complete: function(results) {
+            const data = results.data;
+            console.log("Opgehaalde data:", data); // Handig om de ruwe data in F12 te bekijken
+            
+            if(data && data.length > 0) {
+                document.getElementById('status').innerText = "Data succesvol ingeladen. Aantal transacties: " + data.length;
+                bouwTabel(data);
+            } else {
+                document.getElementById('status').innerText = "De spreadsheet lijkt leeg te zijn of kon niet gelezen worden.";
+            }
+        },
+        error: function(error) {
+            console.error("Fout bij ophalen:", error);
+            document.getElementById('status').innerText = "Kon de gegevens niet ophalen. Controleer of de link nog klopt.";
+        }
+    });
+
+    function bouwTabel(data) {
+        // 1. Haal de kolomnamen (headers) uit de eerste rij
+        const headers = Object.keys(data[0]);
+        
+        // 2. Bouw de table header op
+        const thead = document.getElementById('tableHead');
+        let headerHtml = '<tr>';
+        headers.forEach(header => {
+            headerHtml += `<th>${header}</th>`;
+        });
+        headerHtml += '</tr>';
+        thead.innerHTML = headerHtml;
+
+        // 3. Bouw de table body (de rijen met data) op
+        const tbody = document.getElementById('tableBody');
+        let bodyHtml = '';
+        
+        data.forEach(rij => {
+            bodyHtml += '<tr>';
+            headers.forEach(header => {
+                let waarde = rij[header];
+                
+                // Als de waarde een getal is, formatteer het dan als een bedrag met 2 decimalen
+                if (typeof waarde === 'number') {
+                    waarde = "€ " + waarde.toFixed(2);
+                }
+                
+                bodyHtml += `<td>${waarde !== null && waarde !== undefined ? waarde : ''}</td>`;
+            });
+            bodyHtml += '</tr>';
+        });
+        
+        tbody.innerHTML = bodyHtml;
+    }
+</script>
+
+</body>
+</html>

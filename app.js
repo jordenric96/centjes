@@ -13,7 +13,8 @@ const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "okay", "colruyt", "carrefour", "aldi","CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize"],
     "Creche": ["disneyland"],
     "Automaat werk": ["SELECTA 2850 BOOM"],
-     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"]
+     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet"],
+    "Bouwmarkt": ["Gamma", "Brico"]
 };
 
 let alleData = []; 

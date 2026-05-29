@@ -19,7 +19,7 @@ const CATEGORIE_RULES = {
     "Bol": ["Bol"],
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],
-    "Apotheek": ["Apotheek", "NEWPHARMA", "Pharma"], 
+    "Apotheek": ["Apotheek", "NEWPHARMA", "Pharma", "FARMALINE"], 
     "Bakker": ["Exotica", "Locus"],
     "Tanken": ["Dats", "Total"],
     "Sushi": ["Sushi"],

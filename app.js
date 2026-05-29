@@ -43,7 +43,8 @@ const VASTE_CATEGORIEEN = [
     "AG insurance",
     "Lening",
     "Water, Gas & Elektriciteit",
-    "Internet & Telecom"
+    "Internet & Telecom",
+    "Haviland"
 ];
 let alleData = []; 
 

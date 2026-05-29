@@ -9,14 +9,15 @@ const KOLOM_TYPE = "Type verrichting";
 
 // --- 1. JOUW SPECIFIEKE CATEGORIEËN ---
 const CATEGORIE_RULES = {
-    "Supermarkt": ["huwaert", "FLAVOR SHOP", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH"],
+    "Supermarkt": ["huwaert", "FLAVOR SHOP", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH", "WIBRA", "FOODCOMPANY"],
     "Creche": ["disneyland"],
     "Automaat werk": ["SELECTA 2850 BOOM"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG"],
-    "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria"], 
-    "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA"],
+    "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES"], 
+    "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA"],
     "Dreamland": ["Dreamland"],
     "Bol": ["Bol"],
+    "Ijsjes": ["Ijs", "Krijmerie", "Martinique"],
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],
     "Apotheek": ["Apotheek", "NEWPHARMA", "Pharma", "FARMALINE"], 
@@ -25,7 +26,7 @@ const CATEGORIE_RULES = {
     "Sushi": ["Sushi"],
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara", "DEDOLES"],
     "Kapper": ["Hair", "BLONDES & BROWNIES"],
-    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon", "Iboya"],
+    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon", "Iboya", "TEAMSWEAR"],
     "Kine": ["kine", "Action"],
     "Pluspas": ["Pluspas", "Corporate Benefi"],
     "Haviland": ["Haviland"],

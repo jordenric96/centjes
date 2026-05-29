@@ -45,7 +45,7 @@ const CATEGORIE_RULES = {
 const HOOFD_GROEPEN = {
     "Eten en drinken": ["Supermarkt", "Frietjes", "Restaurant", "Ijsjes", "Broodjes", "Bakker", "Sushi"],
     "Huis": ["Bouwmarkt", "Meubelwinkel", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland", "Ketel onderhoud", "Bloemen"],
-    "Verzorging": ["Apotheek", "Kapper", "Kine", "Bril"],
+    "Verzorging": ["Apotheek", "Kapper", "Kine", "Bril", "Dokter"],
     "Verzekeringen": ["AG insurance"],
     "Werk": ["Automaat werk", "Pluspas"],
     "Hobby's": ["Hobby's"],

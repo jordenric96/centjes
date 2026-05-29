@@ -24,20 +24,22 @@ const CATEGORIE_RULES = {
     "Sushi": ["Sushi"],
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara"],
     "Kapper": ["Hair"],
-    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo"]
+    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo"],
     // Hieronder staan je vaste kosten inclusief hun zoekwoorden:
-   
+    "AG insurance": ["AG"],
+    "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
+    "Water, Gas & Elektriciteit": ["water", "watergroep"],
+    "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 };
 
 // --- NIEUW: VASTE KOSTEN LIJST (HIER ENKEL DE NAMEN VAN DE CATEGORIEËN) ---
 // Alles wat hierin staat telt op als 'Vast', de rest is automatisch 'Variabel'.
 const VASTE_CATEGORIEEN = [
-    "AG insurance": ["AG"],
-    "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
-    "Water, Gas & Elektriciteit": ["water", "watergroep"],
-    "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
+    "AG insurance",
+    "Lening",
+    "Water, Gas & Elektriciteit",
+    "Internet & Telecom"
 ];
-
 let alleData = []; 
 
 Papa.parse(sheetUrl, {

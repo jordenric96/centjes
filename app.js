@@ -21,6 +21,7 @@ const CATEGORIE_RULES = {
     "Meubelwinkel": ["Jysk", "Ikea"],
     "Apotheek": ["Apotheek"], 
     "Bakker": ["Exotica", "Locus"],
+    "tanken": ["Dats", "Total"],
     "Sushi": ["Sushi"] 
 };
 

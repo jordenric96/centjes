@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard + Weekmenu met gefixte details & maandtotaal
+// app.js - Financiële Dashboard + Weekmenu met propere winkelnamen
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 const budgetSheetUrl = ""; // VUL HIER DE LINK NAAR JE NIEUWE WEEKMENU CSV IN
@@ -32,8 +32,6 @@ const CATEGORIE_RULES = {
     "Kine": ["kine", "Action"],
     "Pluspas": ["Pluspas", "Corporate Benefi"],
     "Haviland": ["Haviland"],
-    "Visa": ["AFREKENING VISA KREDIETKAART"],
-     "Geldfhaling": ["GELDOPNEMING"],
     "AG insurance": ["AG"],
     "Bloemen": ["Bloomon"],
     "Bril": ["Optiek", "D EN M NV"],
@@ -61,7 +59,6 @@ let alleData = [];
 let budgetData = []; 
 let mijnMaandGrafiek = null, mijnCatGrafiek = null;
 
-// --- WEEKBUDGET VARIABELEN ---
 let huidigDatum = new Date();
 let toonJaar = huidigDatum.getFullYear();
 let toonWeek = getISOWeek(huidigDatum);
@@ -155,6 +152,24 @@ function bepaalHoofdgroep(sub) {
 
 function formatBedrag(g) { return "€ " + Math.abs(g).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
+// NIEUW: De stofzuiger voor lelijke bank-teksten!
+function schoonNaamOp(tekst) {
+    if (!tekst) return "";
+    let t = tekst;
+    
+    // Verwijder 'BETALING MET DEBETKAART NUMMER' en alle X'en en cijfers die erna komen
+    t = t.replace(/BETALING MET DEBETKAART NUMMER [0-9A-ZX\s]+/gi, '');
+    
+    // Verwijder overbodige bank referentie staarten
+    t = t.replace(/BANCONTACT BANKREFERENTIE.*$/gi, '');
+    t = t.replace(/VALUTADATUM.*$/gi, '');
+    
+    // Verwijder extra spaties en streepjes aan het begin of einde
+    t = t.replace(/^[-\s]+|[-\s]+$/g, '').trim();
+    
+    return t;
+}
+
 function initialiseerJaren() {
     const jarenSet = new Set();
     alleData.forEach(rij => {
@@ -204,7 +219,6 @@ function updateWeekbudgetUI() {
         let bedrag = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
         if(isNaN(bedrag) || bedrag >= 0) return; 
 
-        // Haal jaar en maand rechtstreeks uit de string om tijdzone problemen te voorkomen
         let rijJaar = parseInt(haalJaar(rij[KOLOM_DATUM]));
         let rijMaand = haalRuweMaand(rij[KOLOM_DATUM]);
         
@@ -218,13 +232,15 @@ function updateWeekbudgetUI() {
         if (getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
             totaalUitgegeven += Math.abs(bedrag);
             
-            // MAAK DE NAAM DUIDELIJKER: Combineer de kolommen
             let parts = [];
             if (rij[KOLOM_TEGENPARTIJ]) parts.push(String(rij[KOLOM_TEGENPARTIJ]).trim());
             if (rij[KOLOM_MEDEDELING]) parts.push(String(rij[KOLOM_MEDEDELING]).trim());
             if (rij[KOLOM_DETAILS]) parts.push(String(rij[KOLOM_DETAILS]).trim());
             
-            let weergaveNaam = parts.length > 0 ? parts.join(" - ") : "Supermarkt (Geen details)";
+            let weergaveNaam = parts.length > 0 ? parts.join(" ") : "Supermarkt (Geen details)";
+            
+            // HIER PASSEN WE DE NIEUWE STOFZUIGER TOE:
+            weergaveNaam = schoonNaamOp(weergaveNaam);
 
             gecombineerdeLijst.push({ 
                 datumObj: d, datumStr: rij[KOLOM_DATUM], 

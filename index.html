@@ -38,6 +38,9 @@
             <button id="btn-tab-week" class="tab-btn" onclick="switchView('weekbudget')">🛒 Weekmenu (Supermarkt)</button>
         </div>
 
+        <!-- ============================================== -->
+        <!-- VIEW 1: JAARDASHBOARD -->
+        <!-- ============================================== -->
         <div id="view-dashboard">
             <div class="filter-sectie" style="margin-bottom: 25px;">
                 <label for="jaarSelect">Selecteer jaar: </label>
@@ -71,6 +74,14 @@
                 <section class="card">
                     <h3>Verdeling Hoofdgroepen</h3>
                     <div style="position: relative; height: 300px;"><canvas id="categorieGrafiek"></canvas></div>
+                </section>
+            </div>
+            
+            <!-- NIEUW: LIJNGRAFIEK VOOR TRENDS -->
+            <div class="content-grid" style="margin-bottom: 30px; display: block;">
+                <section class="card">
+                    <h3>Uitgaven Trends (Supermarkt, Bol.com & Kleren)</h3>
+                    <div style="position: relative; height: 300px; width: 100%;"><canvas id="trendGrafiek"></canvas></div>
                 </section>
             </div>
 
@@ -117,6 +128,9 @@
             </section>
         </div>
 
+        <!-- ============================================== -->
+        <!-- VIEW 2: HET WEEKMENU BUDGET -->
+        <!-- ============================================== -->
         <div id="view-weekbudget" style="display: none;">
             <div class="week-nav">
                 <button onclick="veranderWeek(-1)">◀ Vorige Week</button>

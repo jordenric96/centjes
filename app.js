@@ -18,7 +18,7 @@ const CATEGORIE_RULES = {
     "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES"], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA"],
     "Dreamland": ["Dreamland"],
-    "Bol": ["Bol"],
+    "Online": ["Bol", "Amazon", "Coolblue", "Ali"],
     "Ijsjes": ["Ijs", "Krijmerie", "Martinique", "Choconelly"],
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],
@@ -37,6 +37,8 @@ const CATEGORIE_RULES = {
     "Bril": ["Optiek", "D EN M NV"],
     "Ketel onderhoud": ["Vaillant"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
+    "Visa": ["Visa"], 
+    "Geldafhaling": ["Geldopneming"], 
     "Water, Gas & Elektriciteit": ["water", "watergroep", "LUMINUS", "ELECTRABEL"],
     "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 };

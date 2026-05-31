@@ -13,12 +13,12 @@ const KOLOM_TYPE = "Type verrichting";
 const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH", "WIBRA", "FOODCOMPANY"],
     "Creche": ["disneyland"],
-    "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"], // Aangepast Jorden!
+    "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG"],
     "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES", "DIMATTO", "FRAMILIE", "BUYSSE MOBIELE"], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA", "VANNEROM"],
     "Dreamland": ["Dreamland"],
-    "Online": ["Bol", "Amazon", "Coolblue", "VANDEN BORRE", "Mediamarkt", "VEEPEE"], // Aangepast Jorden!
+    "Online": ["Bol", "Amazon", "Coolblue", "VANDEN BORRE", "Mediamarkt", "VEEPEE"],
     "Ijsjes": ["Ijs", "Krijmerie", "Martinique", "Choconelly"],
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],
@@ -226,7 +226,6 @@ function updateWeekbudgetUI() {
     let doelMaand = refDate.getMonth();
     let doelJaar = refDate.getFullYear();
     
-    // Bereken datums van en tot voor deze week
     let endOfWeek = new Date(refDate);
     endOfWeek.setDate(refDate.getDate() + 6);
     let formatOpt = { day: 'numeric', month: 'short' };
@@ -235,7 +234,6 @@ function updateWeekbudgetUI() {
     let toonMaandNaam = refDate.toLocaleString('nl-BE', { month: 'long' });
     toonMaandNaam = toonMaandNaam.charAt(0).toUpperCase() + toonMaandNaam.slice(1);
     
-    // Voeg datumreeks toe aan titel
     document.getElementById('week-titel').innerHTML = `Week ${toonWeek}, ${toonJaar}<br><span style="font-size:0.85rem; color:#64748b; font-weight:600;">${datumBereik}</span>`;
     document.getElementById('maandTitel').innerText = `Totaal ${toonMaandNaam}`;
     
@@ -287,37 +285,41 @@ function updateWeekbudgetUI() {
         });
     }
 
-    document.getElementById('weekBudgetTonen').innerText = formatBedrag(totaalBudget);
+    if(document.getElementById('weekBudgetTonen')) document.getElementById('weekBudgetTonen').innerText = formatBedrag(totaalBudget);
     document.getElementById('weekUitgegevenTonen').innerText = formatBedrag(totaalUitgegeven);
     document.getElementById('maandUitgegevenTonen').innerText = formatBedrag(totaalMaandUitgegeven);
     
     let verschil = totaalBudget - totaalUitgegeven;
     let verschEl = document.getElementById('weekVerschilTonen');
-    verschEl.innerText = (verschil < 0 ? "- " : "+ ") + formatBedrag(verschil);
-    
-    if (budgetData.length === 0) {
-        document.getElementById('weekVerschilKaart').style.display = 'none'; 
-    } else {
-        document.getElementById('weekVerschilKaart').style.display = 'block';
-        verschEl.className = verschil >= 0 ? 'bedrag positief' : 'bedrag negatief';
+    if(verschEl) {
+        verschEl.innerText = (verschil < 0 ? "- " : "+ ") + formatBedrag(verschil);
+        if (budgetData.length === 0) {
+            if(document.getElementById('weekVerschilKaart')) document.getElementById('weekVerschilKaart').style.display = 'none'; 
+        } else {
+            if(document.getElementById('weekVerschilKaart')) document.getElementById('weekVerschilKaart').style.display = 'block';
+            verschEl.className = verschil >= 0 ? 'bedrag positief' : 'bedrag negatief';
+        }
     }
 
     gecombineerdeLijst.sort((a, b) => b.datumObj - a.datumObj); 
     
     let tbody = document.getElementById('weekTransactiesBody');
     if (gecombineerdeLijst.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Geen supermarkt-uitgaven of budget gevonden in deze week.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Geen supermarkt-uitgaven gevonden in deze week.</td></tr>';
     } else {
         let html = '';
         gecombineerdeLijst.forEach(item => {
             let bronBadge = item.bron === 'bank' ? `<span class="bron-badge bron-bank">Bank (Werkelijk)</span>` : `<span class="bron-badge bron-sheet">Spreadsheet (Gepland)</span>`;
             let bedragClass = item.bron === 'bank' ? 'tekst-negatief' : 'tekst-positief'; 
             
+            // Als de 'Gepland Budget' niet meer in de HTML staat tonen we de bronkolom niet.
+            let tdBronHTML = document.getElementById('weekBudgetTonen') ? `<td>${bronBadge}</td>` : '';
+
             html += `<tr>
                 <td><strong>${item.datumStr}</strong></td>
                 <td><div style="max-width: 450px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.naam}">${item.naam}</div></td>
                 <td class="${bedragClass}"><strong>${formatBedrag(item.bedrag)}</strong></td>
-                <td>${bronBadge}</td>
+                ${tdBronHTML}
             </tr>`;
         });
         tbody.innerHTML = html;

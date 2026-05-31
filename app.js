@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Max 2 grafieken & Data-weergave in Weekmenu)
+// app.js - Financiële Dashboard (Met Handmatige Override & Inkomsten-labels)
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 const budgetSheetUrl = ""; // VUL HIER DE LINK NAAR JE NIEUWE WEEKMENU CSV IN
@@ -11,8 +11,9 @@ const KOLOM_DETAILS = "Details";
 const KOLOM_TYPE = "Type verrichting";
 
 const CATEGORIE_RULES = {
+    // --- UITGAVEN ---
     "Supermarkt": ["huwaert", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH", "WIBRA", "FOODCOMPANY"],
-    "Creche": ["disneyland"],
+    "Creche": ["disneyland", "kinderopvang", "creche"],
     "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG"],
     "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES", "DIMATTO", "FRAMILIE", "BUYSSE MOBIELE"], 
@@ -38,9 +39,14 @@ const CATEGORIE_RULES = {
     "Ketel onderhoud": ["Vaillant"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
     "Visa": ["Visa"], 
-    "Geldafhaling": ["Geldopneming"], 
+    "Geldafhaling": ["Geldopneming", "Bancontact"], 
     "Water, Gas & Elektriciteit": ["water", "watergroep", "LUMINUS", "ELECTRABEL"],
-    "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
+    "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"],
+    
+    // --- INKOMSTEN (deze verfraaien je tabel, maar worden genegeerd door je uitgaven-grafieken) ---
+    "Loon": ["loon", "salaris", "wedde", "bezoldiging"],
+    "Kinderbijslag": ["groeipakket", "kinderbijslag", "fons", "infino", "kidslife", "parentia", "myfamily"],
+    "Terugbetaling": ["terugbetaling", "mutualiteit", "cm", "solidaris", "helAN"]
 };
 
 const HOOFD_GROEPEN = {
@@ -53,7 +59,8 @@ const HOOFD_GROEPEN = {
     "Lou & Noé": ["Creche", "Dreamland"],
     "Auto": ["Tanken"],
     "Shoppen & Kleding": ["Kleren", "Online"],
-    "Bank & Geldzaken": ["Visa", "Geldafhaling"]
+    "Bank & Geldzaken": ["Visa", "Geldafhaling"],
+    "Inkomsten": ["Loon", "Kinderbijslag", "Terugbetaling"] // Extra labeltje voor de tabel!
 };
 
 const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"];
@@ -142,6 +149,12 @@ function haalRuweMaand(datumStr) {
 }
 
 function bepaalCategorie(rij) {
+    // 1. HANDMATIGE OVERRIDE: Als je in je Google Sheet een kolom "Eigen Categorie" maakt en invult, krijgt deze voorrang!
+    if (rij["Eigen Categorie"] && String(rij["Eigen Categorie"]).trim() !== "") {
+        return String(rij["Eigen Categorie"]).trim();
+    }
+
+    // 2. Automatische Regels
     const tekst = `${rij[KOLOM_TEGENPARTIJ] || ''} ${rij[KOLOM_MEDEDELING] || ''} ${rij[KOLOM_DETAILS] || ''} ${rij[KOLOM_TYPE] || ''}`.toLowerCase();
     for (const [cat, words] of Object.entries(CATEGORIE_RULES)) {
         for (const w of words) if (tekst.includes(w.toLowerCase())) return cat;
@@ -312,7 +325,6 @@ function updateWeekbudgetUI() {
             let bronBadge = item.bron === 'bank' ? `<span class="bron-badge bron-bank">Bank (Werkelijk)</span>` : `<span class="bron-badge bron-sheet">Spreadsheet (Gepland)</span>`;
             let bedragClass = item.bron === 'bank' ? 'tekst-negatief' : 'tekst-positief'; 
             
-            // Als de 'Gepland Budget' niet meer in de HTML staat tonen we de bronkolom niet.
             let tdBronHTML = document.getElementById('weekBudgetTonen') ? `<td>${bronBadge}</td>` : '';
 
             html += `<tr>
@@ -398,14 +410,20 @@ function verwerkData(data, huidigJaar) {
         if (!maanden[m]) { maanden[m] = { in: 0, uit: 0 }; }
 
         if (b > 0) {
+            // Positieve bedragen worden hier geteld als INKOMSTEN
             inkomsten += b;
             maanden[m].in += b;
+            
+            // LET OP: Doordat we hier in de "if (b > 0)" zitten, worden inkomsten 
+            // 100% overgeslagen voor de donut-grafiek en de uitgaven-tabellen hieronder!
         } else {
+            // Negatieve bedragen = UITGAVEN
             uitgaven += b;
             maanden[m].uit += b;
             if (b < grootsteUitgave) grootsteUitgave = b;
             if (VASTE_CATEGORIEEN.includes(cat)) vast += Math.abs(b);
             
+            // Deze arrays sturen je grafieken aan
             if (!cats[cat]) cats[cat] = 0; cats[cat] += Math.abs(b);
             if (!groepen[hg]) groepen[hg] = 0; groepen[hg] += Math.abs(b);
             
@@ -546,6 +564,7 @@ function bouwTrendGrafieken() {
 
     alleData.forEach(rij => {
         let b = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
+        // POSITIEVE BEDRAGEN (Inkomsten) WORDEN HIER UITGESLOTEN VAN DE TRENDS!
         if (isNaN(b) || b >= 0) return; 
 
         const cat = bepaalCategorie(rij);

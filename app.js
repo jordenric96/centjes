@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard + Weekmenu met Maandtotaal
+// app.js - Financiële Dashboard + Weekmenu met gefixte details & maandtotaal
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 const budgetSheetUrl = ""; // VUL HIER DE LINK NAAR JE NIEUWE WEEKMENU CSV IN
@@ -131,6 +131,13 @@ function haalJaar(datumStr) {
     return "Onbekend";
 }
 
+function haalRuweMaand(datumStr) {
+    if (!datumStr) return null;
+    const parts = String(datumStr).split(/[-/]/);
+    if (parts.length >= 3) return parts[0].length === 4 ? parseInt(parts[1]) - 1 : parseInt(parts[1]) - 1;
+    return null;
+}
+
 function bepaalCategorie(rij) {
     const tekst = `${rij[KOLOM_TEGENPARTIJ] || ''} ${rij[KOLOM_MEDEDELING] || ''} ${rij[KOLOM_DETAILS] || ''} ${rij[KOLOM_TYPE] || ''}`.toLowerCase();
     for (const [cat, words] of Object.entries(CATEGORIE_RULES)) {
@@ -174,9 +181,10 @@ function veranderWeek(delta) {
 }
 
 function updateWeekbudgetUI() {
-    // Stel data in voor Totaal Maand logica
     let refDate = getDateOfISOWeek(toonWeek, toonJaar);
-    let toonMaand = refDate.getMonth();
+    let doelMaand = refDate.getMonth();
+    let doelJaar = refDate.getFullYear();
+    
     let toonMaandNaam = refDate.toLocaleString('nl-BE', { month: 'long' });
     toonMaandNaam = toonMaandNaam.charAt(0).toUpperCase() + toonMaandNaam.slice(1);
     
@@ -191,23 +199,34 @@ function updateWeekbudgetUI() {
     alleData.forEach(rij => {
         if(bepaalCategorie(rij) !== 'Supermarkt') return;
         
-        const d = parseDatumToDate(rij[KOLOM_DATUM]);
-        if(!d) return;
-        
         let bedrag = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
         if(isNaN(bedrag) || bedrag >= 0) return; 
 
-        // Optellen voor HELE MAAND
-        if (d.getFullYear() === toonJaar && d.getMonth() === toonMaand) {
+        // Haal jaar en maand rechtstreeks uit de string om tijdzone problemen te voorkomen
+        let rijJaar = parseInt(haalJaar(rij[KOLOM_DATUM]));
+        let rijMaand = haalRuweMaand(rij[KOLOM_DATUM]);
+        
+        if (rijJaar === doelJaar && rijMaand === doelMaand) {
             totaalMaandUitgegeven += Math.abs(bedrag);
         }
 
-        // Optellen voor SPECIFIEKE WEEK
+        const d = parseDatumToDate(rij[KOLOM_DATUM]);
+        if(!d) return;
+
         if (getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
             totaalUitgegeven += Math.abs(bedrag);
+            
+            // MAAK DE NAAM DUIDELIJKER: Combineer de kolommen
+            let parts = [];
+            if (rij[KOLOM_TEGENPARTIJ]) parts.push(String(rij[KOLOM_TEGENPARTIJ]).trim());
+            if (rij[KOLOM_MEDEDELING]) parts.push(String(rij[KOLOM_MEDEDELING]).trim());
+            if (rij[KOLOM_DETAILS]) parts.push(String(rij[KOLOM_DETAILS]).trim());
+            
+            let weergaveNaam = parts.length > 0 ? parts.join(" - ") : "Supermarkt (Geen details)";
+
             gecombineerdeLijst.push({ 
                 datumObj: d, datumStr: rij[KOLOM_DATUM], 
-                naam: rij[KOLOM_TEGENPARTIJ] || "Supermarkt Transactie", 
+                naam: weergaveNaam, 
                 bedrag: Math.abs(bedrag), bron: 'bank' 
             });
         }
@@ -262,7 +281,7 @@ function updateWeekbudgetUI() {
             
             html += `<tr>
                 <td><strong>${item.datumStr}</strong></td>
-                <td>${item.naam}</td>
+                <td><div style="max-width: 450px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.naam}">${item.naam}</div></td>
                 <td class="${bedragClass}"><strong>${formatBedrag(item.bedrag)}</strong></td>
                 <td>${bronBadge}</td>
             </tr>`;

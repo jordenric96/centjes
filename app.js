@@ -1,8 +1,7 @@
-// app.js - Financiële Dashboard + Weekmenu
+// app.js - Financiële Dashboard + Weekmenu met Maandtotaal
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
-// VUL HIERONDER DE LINK NAAR JE NIEUWE WEEKMENU CSV IN:
-const budgetSheetUrl = ""; 
+const budgetSheetUrl = ""; // VUL HIER DE LINK NAAR JE NIEUWE WEEKMENU CSV IN
 
 const KOLOM_DATUM = "Uitvoeringsdatum"; 
 const KOLOM_BEDRAG = "Bedrag"; 
@@ -11,7 +10,6 @@ const KOLOM_MEDEDELING = "Mededeling";
 const KOLOM_DETAILS = "Details";
 const KOLOM_TYPE = "Type verrichting";
 
-// --- JOUW SPECIFIEKE CATEGORIEËN ---
 const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH", "WIBRA", "FOODCOMPANY"],
     "Creche": ["disneyland"],
@@ -58,7 +56,7 @@ const HOOFD_GROEPEN = {
 const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"];
 
 let alleData = []; 
-let budgetData = []; // Data uit je nieuwe sheet
+let budgetData = []; 
 let mijnMaandGrafiek = null, mijnCatGrafiek = null;
 
 // --- WEEKBUDGET VARIABELEN ---
@@ -66,7 +64,6 @@ let huidigDatum = new Date();
 let toonJaar = huidigDatum.getFullYear();
 let toonWeek = getISOWeek(huidigDatum);
 
-// --- TAB NAVIGATIE ---
 function switchView(viewName) {
     document.getElementById('view-dashboard').style.display = viewName === 'dashboard' ? 'block' : 'none';
     document.getElementById('view-weekbudget').style.display = viewName === 'weekbudget' ? 'block' : 'none';
@@ -77,7 +74,6 @@ function switchView(viewName) {
     if(viewName === 'weekbudget') { updateWeekbudgetUI(); }
 }
 
-// Haal data van beide sheets op
 Papa.parse(sheetUrl, {
     download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
     complete: function(results) {
@@ -85,15 +81,11 @@ Papa.parse(sheetUrl, {
         document.getElementById('status').innerText = `Bank verbonden (${alleData.length} transacties)`;
         document.getElementById('status').classList.add('succes');
         
-        // Haal direct daarna de budget data op (als er een link is)
         if (budgetSheetUrl !== "") {
             Papa.parse(budgetSheetUrl, {
                 download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
-                complete: function(budgetRes) {
-                    budgetData = budgetRes.data;
-                    initialiseerJaren();
-                },
-                error: function() { initialiseerJaren(); } // Fallback
+                complete: function(budgetRes) { budgetData = budgetRes.data; initialiseerJaren(); },
+                error: function() { initialiseerJaren(); } 
             });
         } else {
             initialiseerJaren();
@@ -101,13 +93,10 @@ Papa.parse(sheetUrl, {
     }
 });
 
-// --- HELPER FUNCTIES DATUMS & WEKEN ---
 function parseDatumToDate(datumStr) {
     if (!datumStr) return null;
     const parts = String(datumStr).split(/[-/]/);
-    if (parts.length === 3) {
-        return parts[0].length === 4 ? new Date(parts[0], parts[1]-1, parts[2]) : new Date(parts[2], parts[1]-1, parts[0]);
-    }
+    if (parts.length === 3) return parts[0].length === 4 ? new Date(parts[0], parts[1]-1, parts[2]) : new Date(parts[2], parts[1]-1, parts[0]);
     return null;
 }
 
@@ -119,6 +108,22 @@ function getISOWeek(date) {
     return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
 }
 
+function getISOYear(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    return d.getUTCFullYear();
+}
+
+function getDateOfISOWeek(w, y) {
+    let simple = new Date(y, 0, 1 + (w - 1) * 7);
+    let dow = simple.getDay();
+    let ISOweekStart = simple;
+    if (dow <= 4) ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+    else ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+    return ISOweekStart;
+}
+
 function haalJaar(datumStr) {
     if (!datumStr) return "Onbekend";
     const parts = String(datumStr).split(/[-/]/);
@@ -126,7 +131,6 @@ function haalJaar(datumStr) {
     return "Onbekend";
 }
 
-// --- ORIGINELE FUNCTIES ---
 function bepaalCategorie(rij) {
     const tekst = `${rij[KOLOM_TEGENPARTIJ] || ''} ${rij[KOLOM_MEDEDELING] || ''} ${rij[KOLOM_DETAILS] || ''} ${rij[KOLOM_TYPE] || ''}`.toLowerCase();
     for (const [cat, words] of Object.entries(CATEGORIE_RULES)) {
@@ -162,7 +166,6 @@ function initialiseerJaren() {
     updateDashboard();
 }
 
-// --- LOGICA VOOR HET WEEKBUDGET ---
 function veranderWeek(delta) {
     toonWeek += delta;
     if(toonWeek < 1) { toonWeek = 52; toonJaar--; } 
@@ -171,37 +174,47 @@ function veranderWeek(delta) {
 }
 
 function updateWeekbudgetUI() {
+    // Stel data in voor Totaal Maand logica
+    let refDate = getDateOfISOWeek(toonWeek, toonJaar);
+    let toonMaand = refDate.getMonth();
+    let toonMaandNaam = refDate.toLocaleString('nl-BE', { month: 'long' });
+    toonMaandNaam = toonMaandNaam.charAt(0).toUpperCase() + toonMaandNaam.slice(1);
+    
     document.getElementById('week-titel').innerText = `Week ${toonWeek}, ${toonJaar}`;
+    document.getElementById('maandTitel').innerText = `Totaal ${toonMaandNaam}`;
     
     let totaalUitgegeven = 0;
     let totaalBudget = 0;
+    let totaalMaandUitgegeven = 0;
     let gecombineerdeLijst = [];
 
-    // 1. Zoek bank-uitgaven (Supermarkt) in deze specifieke week
     alleData.forEach(rij => {
         if(bepaalCategorie(rij) !== 'Supermarkt') return;
         
         const d = parseDatumToDate(rij[KOLOM_DATUM]);
         if(!d) return;
         
-        // Controleer of de datum binnen de gekozen week valt
-        if (getISOWeek(d) === toonWeek && d.getFullYear() === toonJaar) {
-            let bedrag = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
-            if(bedrag < 0) { // Alleen uitgaven optellen
-                totaalUitgegeven += Math.abs(bedrag);
-                gecombineerdeLijst.push({ 
-                    datumObj: d, datumStr: rij[KOLOM_DATUM], 
-                    naam: rij[KOLOM_TEGENPARTIJ] || "Supermarkt Transactie", 
-                    bedrag: Math.abs(bedrag), bron: 'bank' 
-                });
-            }
+        let bedrag = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
+        if(isNaN(bedrag) || bedrag >= 0) return; 
+
+        // Optellen voor HELE MAAND
+        if (d.getFullYear() === toonJaar && d.getMonth() === toonMaand) {
+            totaalMaandUitgegeven += Math.abs(bedrag);
+        }
+
+        // Optellen voor SPECIFIEKE WEEK
+        if (getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
+            totaalUitgegeven += Math.abs(bedrag);
+            gecombineerdeLijst.push({ 
+                datumObj: d, datumStr: rij[KOLOM_DATUM], 
+                naam: rij[KOLOM_TEGENPARTIJ] || "Supermarkt Transactie", 
+                bedrag: Math.abs(bedrag), bron: 'bank' 
+            });
         }
     });
 
-    // 2. Zoek budget-invoer (uit nieuwe sheet) in deze week
     if (budgetData.length > 0) {
         budgetData.forEach(rij => {
-            // Zoek naar kolom "Datum" of "datum", en "Bedrag" of "bedrag"
             let dStr = rij['Datum'] || rij['datum'];
             let bStr = rij['Bedrag'] || rij['bedrag'];
             if (!dStr || bStr == null) return;
@@ -209,7 +222,7 @@ function updateWeekbudgetUI() {
             const d = parseDatumToDate(dStr);
             if(!d) return;
 
-            if (getISOWeek(d) === toonWeek && d.getFullYear() === toonJaar) {
+            if (getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
                 let bedrag = typeof bStr === 'string' ? parseFloat(bStr.replace(',','.')) : bStr;
                 totaalBudget += Math.abs(bedrag);
                 gecombineerdeLijst.push({ 
@@ -221,24 +234,22 @@ function updateWeekbudgetUI() {
         });
     }
 
-    // 3. Update de Kaartjes
     document.getElementById('weekBudgetTonen').innerText = formatBedrag(totaalBudget);
     document.getElementById('weekUitgegevenTonen').innerText = formatBedrag(totaalUitgegeven);
+    document.getElementById('maandUitgegevenTonen').innerText = formatBedrag(totaalMaandUitgegeven);
     
     let verschil = totaalBudget - totaalUitgegeven;
     let verschEl = document.getElementById('weekVerschilTonen');
     verschEl.innerText = (verschil < 0 ? "- " : "+ ") + formatBedrag(verschil);
     
-    // Kleur het verschil (Groen = onder budget, Rood = over budget)
     if (budgetData.length === 0) {
-        document.getElementById('weekVerschilKaart').style.display = 'none'; // Verberg als sheet nog niet bestaat
+        document.getElementById('weekVerschilKaart').style.display = 'none'; 
     } else {
         document.getElementById('weekVerschilKaart').style.display = 'block';
         verschEl.className = verschil >= 0 ? 'bedrag positief' : 'bedrag negatief';
     }
 
-    // 4. Update de Tabel
-    gecombineerdeLijst.sort((a, b) => b.datumObj - a.datumObj); // Nieuwste eerst
+    gecombineerdeLijst.sort((a, b) => b.datumObj - a.datumObj); 
     
     let tbody = document.getElementById('weekTransactiesBody');
     if (gecombineerdeLijst.length === 0) {
@@ -247,7 +258,7 @@ function updateWeekbudgetUI() {
         let html = '';
         gecombineerdeLijst.forEach(item => {
             let bronBadge = item.bron === 'bank' ? `<span class="bron-badge bron-bank">Bank (Werkelijk)</span>` : `<span class="bron-badge bron-sheet">Spreadsheet (Gepland)</span>`;
-            let bedragClass = item.bron === 'bank' ? 'tekst-negatief' : 'tekst-positief'; // Maak bank rood, budget groen
+            let bedragClass = item.bron === 'bank' ? 'tekst-negatief' : 'tekst-positief'; 
             
             html += `<tr>
                 <td><strong>${item.datumStr}</strong></td>
@@ -260,7 +271,6 @@ function updateWeekbudgetUI() {
     }
 }
 
-// --- LOGICA VOOR HET JAARDASHBOARD (Ongewijzigd gebleven) ---
 function updateDashboard() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
     const filterOpOverig = document.getElementById('toonEnkelOverig').checked;

@@ -15,10 +15,10 @@ const CATEGORIE_RULES = {
     "Creche": ["disneyland"],
     "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"], // Aangepast Jorden!
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG"],
-    "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES", "DIMATTO"], 
-    "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA"],
+    "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES", "DIMATTO", "FRAMILIE", "BUYSSE MOBIELE"], 
+    "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA", "VANNEROM"],
     "Dreamland": ["Dreamland"],
-    "Online": ["Bol", "Amazon", "Coolblue", "VANDEN BORRE", "Mediamarkt"], // Aangepast Jorden!
+    "Online": ["Bol", "Amazon", "Coolblue", "VANDEN BORRE", "Mediamarkt", "VEEPEE"], // Aangepast Jorden!
     "Ijsjes": ["Ijs", "Krijmerie", "Martinique", "Choconelly"],
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],

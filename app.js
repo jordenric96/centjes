@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (YTD Trendgrafieken & Frietjes!)
+// app.js - Financiële Dashboard (Max 2 grafieken & Data-weergave in Weekmenu)
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 const budgetSheetUrl = ""; // VUL HIER DE LINK NAAR JE NIEUWE WEEKMENU CSV IN
@@ -13,12 +13,12 @@ const KOLOM_TYPE = "Type verrichting";
 const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH", "WIBRA", "FOODCOMPANY"],
     "Creche": ["disneyland"],
-    "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"],
+    "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"], // Aangepast Jorden!
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG"],
     "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES"], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA"],
     "Dreamland": ["Dreamland"],
-    "Online": ["Bol", "Amazon", "Coolblue"],
+    "Online": ["Bol", "Amazon", "Coolblue"], // Aangepast Jorden!
     "Ijsjes": ["Ijs", "Krijmerie", "Martinique", "Choconelly"],
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],
@@ -226,10 +226,17 @@ function updateWeekbudgetUI() {
     let doelMaand = refDate.getMonth();
     let doelJaar = refDate.getFullYear();
     
+    // Bereken datums van en tot voor deze week
+    let endOfWeek = new Date(refDate);
+    endOfWeek.setDate(refDate.getDate() + 6);
+    let formatOpt = { day: 'numeric', month: 'short' };
+    let datumBereik = `${refDate.toLocaleDateString('nl-BE', formatOpt)} - ${endOfWeek.toLocaleDateString('nl-BE', formatOpt)}`;
+    
     let toonMaandNaam = refDate.toLocaleString('nl-BE', { month: 'long' });
     toonMaandNaam = toonMaandNaam.charAt(0).toUpperCase() + toonMaandNaam.slice(1);
     
-    document.getElementById('week-titel').innerText = `Week ${toonWeek}, ${toonJaar}`;
+    // Voeg datumreeks toe aan titel
+    document.getElementById('week-titel').innerHTML = `Week ${toonWeek}, ${toonJaar}<br><span style="font-size:0.85rem; color:#64748b; font-weight:600;">${datumBereik}</span>`;
     document.getElementById('maandTitel').innerText = `Totaal ${toonMaandNaam}`;
     
     let totaalUitgegeven = 0;
@@ -526,9 +533,8 @@ function tekenBasisGrafieken(mndData, grpData, gesorteerdeMaanden) {
     });
 }
 
-// DE 4 MULTI-YEAR TRENDGRAFIEKEN (YTD - Afgeknipt op de huidige maand!)
 function bouwTrendGrafieken() {
-    let huidigeMaandIndex = new Date().getMonth(); // 0 = Jan, 4 = Mei
+    let huidigeMaandIndex = new Date().getMonth(); 
     
     const alleMaandLabels = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
     const maandLabels = alleMaandLabels.slice(0, huidigeMaandIndex + 1);
@@ -555,7 +561,6 @@ function bouwTrendGrafieken() {
 
     const jarenArray = Array.from(jarenSet).sort().reverse(); 
 
-    // Frisse kleuren, en goudgeel voor Frietjes!
     const baseColors = { 
         'Supermarkt': [5, 150, 105], 
         'Online': [59, 130, 246], 
@@ -569,7 +574,6 @@ function bouwTrendGrafieken() {
             let borderWidth = index === 0 ? 3 : 2;
             let c = baseColors[cat];
             
-            // Knip de data array af tot en met de huidige maand
             let dataGeknipt = (trendData[cat][jaar] || Array(12).fill(0)).slice(0, huidigeMaandIndex + 1);
 
             return {

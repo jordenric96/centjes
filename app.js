@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Volledige Categorieën, Maandnamen & 3 Luxe Trendgrafieken)
+// app.js - Financiële Dashboard (Strakke Lijngrafieken & Multi-Year Trends)
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 const budgetSheetUrl = ""; // VUL HIER DE LINK NAAR JE NIEUWE WEEKMENU CSV IN
@@ -18,7 +18,7 @@ const CATEGORIE_RULES = {
     "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES"], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA"],
     "Dreamland": ["Dreamland"],
-    "Online": ["Bol", "Amazon", "Coolblue"],
+    "Online": ["Bol", "Amazon", "Coolblue", "Ali"],
     "Ijsjes": ["Ijs", "Krijmerie", "Martinique", "Choconelly"],
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],
@@ -137,7 +137,7 @@ function haalJaar(datumStr) {
 function haalRuweMaand(datumStr) {
     if (!datumStr) return null;
     const parts = String(datumStr).split(/[-/]/);
-    if (parts.length >= 3) return parts[0].length === 4 ? parseInt(parts[1]) - 1 : parseInt(parts[1]) - 1;
+    if (parts.length >= 3) return parseInt(parts[1]) - 1;
     return null;
 }
 
@@ -316,6 +316,7 @@ function updateDashboard() {
     });
     
     verwerkData(jaardata, gekozenJaar);
+    bouwTrendGrafieken(); // Teken de multi-year grafieken voor ALLE data
     
     let tabelData = [...jaardata];
     if (filterOpOverig) tabelData = tabelData.filter(rij => bepaalCategorie(rij) === "Overig");
@@ -345,7 +346,6 @@ function updateDashboard() {
 function verwerkData(data, huidigJaar) {
     let inkomsten = 0, uitgaven = 0, vast = 0, grootsteUitgave = 0;
     const maanden = {}, cats = {}, groepen = {}, hgBreakdown = {};
-    const trendData = { 'Supermarkt': {}, 'Online': {}, 'Kleren': {} };
 
     data.forEach(r => {
         let b = typeof r[KOLOM_BEDRAG] === 'string' ? parseFloat(r[KOLOM_BEDRAG].replace(',','.')) : r[KOLOM_BEDRAG];
@@ -360,12 +360,7 @@ function verwerkData(data, huidigJaar) {
             else m = `${dParts[2]}-${dParts[1]}`;
         }
 
-        if (!maanden[m]) {
-            maanden[m] = { in: 0, uit: 0 };
-            trendData['Supermarkt'][m] = 0;
-            trendData['Online'][m] = 0;
-            trendData['Kleren'][m] = 0;
-        }
+        if (!maanden[m]) { maanden[m] = { in: 0, uit: 0 }; }
 
         if (b > 0) {
             inkomsten += b;
@@ -382,10 +377,6 @@ function verwerkData(data, huidigJaar) {
             if (!hgBreakdown[hg]) hgBreakdown[hg] = {};
             if (!hgBreakdown[hg][cat]) hgBreakdown[hg][cat] = 0;
             hgBreakdown[hg][cat] += Math.abs(b);
-            
-            if (cat === 'Supermarkt') trendData['Supermarkt'][m] += Math.abs(b);
-            if (cat === 'Online') trendData['Online'][m] += Math.abs(b);
-            if (cat === 'Kleren') trendData['Kleren'][m] += Math.abs(b);
         }
     });
 
@@ -421,7 +412,7 @@ function verwerkData(data, huidigJaar) {
     if(document.getElementById('maandBody')) document.getElementById('maandBody').innerHTML = maandHtml;
 
     bouwDrillDownTabel(hgBreakdown, groepen);
-    tekenGrafieken(maanden, groepen, gesorteerdeMaanden, trendData);
+    tekenBasisGrafieken(maanden, groepen, gesorteerdeMaanden);
 }
 
 function bouwDrillDownTabel(breakdown, totalen) {
@@ -467,8 +458,7 @@ function bouwDrillDownTabel(breakdown, totalen) {
     });
 }
 
-function tekenGrafieken(mndData, grpData, gesorteerdeMaanden, trendData) {
-    // 1. Maandgrafiek
+function tekenBasisGrafieken(mndData, grpData, gesorteerdeMaanden) {
     const ctxMaand = document.getElementById('maandGrafiek').getContext('2d');
     if (mijnMaandGrafiek) mijnMaandGrafiek.destroy();
     
@@ -481,19 +471,23 @@ function tekenGrafieken(mndData, grpData, gesorteerdeMaanden, trendData) {
         return mNaam.charAt(0).toUpperCase() + mNaam.slice(1);
     });
 
+    // Deze is nu óók een strakke lijngrafiek!
     mijnMaandGrafiek = new Chart(ctxMaand, {
-        type: 'bar',
+        type: 'line',
         data: {
             labels: maandLabels,
             datasets: [
-                { label: 'Inkomsten', data: gesorteerdeMaanden.map(m => mndData[m].in), backgroundColor: '#00E676', borderRadius: 4 }, 
-                { label: 'Uitgaven', data: gesorteerdeMaanden.map(m => Math.abs(mndData[m].uit)), backgroundColor: '#FF3D00', borderRadius: 4 } 
+                { label: 'Inkomsten', data: gesorteerdeMaanden.map(m => mndData[m].in), borderColor: '#00E676', backgroundColor: '#00E676', borderWidth: 3, tension: 0.4 }, 
+                { label: 'Uitgaven', data: gesorteerdeMaanden.map(m => Math.abs(mndData[m].uit)), borderColor: '#FF3D00', backgroundColor: '#FF3D00', borderWidth: 3, tension: 0.4 } 
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' }, border: {display: false} }, x: { grid: { display: false }, border: {display: false} } },
+            plugins: { tooltip: { mode: 'index', intersect: false } }, interaction: { mode: 'nearest', axis: 'x', intersect: false }
+        }
     });
 
-    // 2. Donut Grafiek
     const ctxCat = document.getElementById('categorieGrafiek').getContext('2d');
     if (mijnCatGrafiek) mijnCatGrafiek.destroy();
     const frisseKleuren = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A733FF', '#FF3366', '#00E5FF', '#999999', '#4CAF50'];
@@ -506,45 +500,83 @@ function tekenGrafieken(mndData, grpData, gesorteerdeMaanden, trendData) {
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
     });
+}
 
-    // 3. De 3 Sparkline Trendgrafieken
-    const geldigeMaanden = gesorteerdeMaanden.filter(m => m !== 'Onbekend');
-    const labelsLijn = geldigeMaanden.map(m => {
-        let tmpD = m.split('-');
-        let realD = new Date(tmpD[0], parseInt(tmpD[1])-1, 1);
-        let mNaam = realD.toLocaleString('nl-BE', { month: 'short' });
-        return mNaam.charAt(0).toUpperCase() + mNaam.slice(1);
+// NIEUW: De functie die AL je jaren verzamelt en naast elkaar legt in de 3 grafieken
+function bouwTrendGrafieken() {
+    const maandLabels = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+    const trendData = { 'Supermarkt': {}, 'Online': {}, 'Kleren': {} };
+    const jarenSet = new Set();
+
+    alleData.forEach(rij => {
+        let b = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
+        if (isNaN(b) || b >= 0) return; // Alleen uitgaven
+
+        const cat = bepaalCategorie(rij);
+        if (['Supermarkt', 'Online', 'Kleren'].includes(cat)) {
+            let jaar = haalJaar(rij[KOLOM_DATUM]);
+            let maand = haalRuweMaand(rij[KOLOM_DATUM]);
+
+            if (jaar !== "Onbekend" && maand !== null) {
+                jarenSet.add(jaar);
+                if (!trendData[cat][jaar]) { trendData[cat][jaar] = Array(12).fill(0); }
+                trendData[cat][jaar][maand] += Math.abs(b);
+            }
+        }
     });
+
+    const jarenArray = Array.from(jarenSet).sort().reverse(); // [2026, 2025, 2024...]
+
+    // RGB Kleuren voor de categorieën
+    const baseColors = { 'Supermarkt': [5, 150, 105], 'Online': [59, 130, 246], 'Kleren': [236, 72, 153] };
+
+    const buildDatasets = (cat) => {
+        return jarenArray.map((jaar, index) => {
+            // Actuele jaar is fel en dik, voorgaande jaren vervagen steeds meer op de achtergrond
+            let opacity = index === 0 ? 1 : Math.max(0.2, 0.6 - (index * 0.2));
+            let borderWidth = index === 0 ? 3 : 2;
+            let c = baseColors[cat];
+
+            return {
+                label: jaar,
+                data: trendData[cat][jaar] || Array(12).fill(0),
+                borderColor: `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${opacity})`,
+                backgroundColor: `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${opacity})`,
+                borderWidth: borderWidth,
+                fill: false, // Pure lijngrafiek!
+                tension: 0.4,
+                pointRadius: index === 0 ? 4 : 0, 
+                pointHoverRadius: 6
+            };
+        });
+    };
 
     const baseOptions = {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: { 
+            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+            tooltip: { mode: 'index', intersect: false }
+        },
         scales: { 
-            y: { beginAtZero: true, grid: { display: false }, border: {display: false} },
+            y: { beginAtZero: true, grid: { color: '#f3f4f6' }, border: {display: false} },
             x: { grid: { display: false }, border: {display: false} }
         },
-        elements: { point: { radius: 4, hitRadius: 10, hoverRadius: 6 } }
+        interaction: { mode: 'nearest', axis: 'x', intersect: false }
     };
 
     if (chartSup) chartSup.destroy();
     chartSup = new Chart(document.getElementById('trendSupermarkt').getContext('2d'), {
-        type: 'line',
-        data: { labels: labelsLijn, datasets: [{ data: geldigeMaanden.map(m => trendData['Supermarkt'][m]), borderColor: '#059669', backgroundColor: 'rgba(5, 150, 105, 0.15)', borderWidth: 3, fill: true, tension: 0.4 }] },
-        options: baseOptions
+        type: 'line', data: { labels: maandLabels, datasets: buildDatasets('Supermarkt') }, options: baseOptions
     });
 
     if (chartOnl) chartOnl.destroy();
     chartOnl = new Chart(document.getElementById('trendOnline').getContext('2d'), {
-        type: 'line',
-        data: { labels: labelsLijn, datasets: [{ data: geldigeMaanden.map(m => trendData['Online'][m]), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', borderWidth: 3, fill: true, tension: 0.4 }] },
-        options: baseOptions
+        type: 'line', data: { labels: maandLabels, datasets: buildDatasets('Online') }, options: baseOptions
     });
 
     if (chartKle) chartKle.destroy();
     chartKle = new Chart(document.getElementById('trendKleren').getContext('2d'), {
-        type: 'line',
-        data: { labels: labelsLijn, datasets: [{ data: geldigeMaanden.map(m => trendData['Kleren'][m]), borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.15)', borderWidth: 3, fill: true, tension: 0.4 }] },
-        options: baseOptions
+        type: 'line', data: { labels: maandLabels, datasets: buildDatasets('Kleren') }, options: baseOptions
     });
 }
 

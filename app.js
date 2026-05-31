@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard + Weekmenu met propere winkelnamen
+// app.js - Financiële Dashboard + Strakke tabellen en Lijngrafiek
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 const budgetSheetUrl = ""; // VUL HIER DE LINK NAAR JE NIEUWE WEEKMENU CSV IN
@@ -18,7 +18,7 @@ const CATEGORIE_RULES = {
     "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES"], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA"],
     "Dreamland": ["Dreamland"],
-    "Online": ["Bol", "Amazon"],
+    "Bol": ["Bol"],
     "Ijsjes": ["Ijs", "Krijmerie", "Martinique", "Choconelly"],
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],
@@ -50,16 +50,14 @@ const HOOFD_GROEPEN = {
     "Hobby's": ["Hobby's"],
     "Lou & Noé": ["Creche", "Dreamland"],
     "Auto": ["Tanken"],
-    "Kleding": ["Kleren"]
-    "Shoppen": ["Amazon", "Bol"]
-    
+    "Shoppen & Kleding": ["Kleren", "Bol"]
 };
 
 const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"];
 
 let alleData = []; 
 let budgetData = []; 
-let mijnMaandGrafiek = null, mijnCatGrafiek = null;
+let mijnMaandGrafiek = null, mijnCatGrafiek = null, mijnTrendGrafiek = null;
 
 let huidigDatum = new Date();
 let toonJaar = huidigDatum.getFullYear();
@@ -94,6 +92,7 @@ Papa.parse(sheetUrl, {
     }
 });
 
+// --- HELPER FUNCTIES ---
 function parseDatumToDate(datumStr) {
     if (!datumStr) return null;
     const parts = String(datumStr).split(/[-/]/);
@@ -154,21 +153,31 @@ function bepaalHoofdgroep(sub) {
 
 function formatBedrag(g) { return "€ " + Math.abs(g).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
-// NIEUW: De stofzuiger voor lelijke bank-teksten!
-function schoonNaamOp(tekst) {
-    if (!tekst) return "";
-    let t = tekst;
+// NIEUW: De verbeterde stofzuiger! Deze haalt specifieke woorden weg, maar laat de namen intact.
+function schoonNaamOp(rij) {
+    let parts = [];
+    if (rij[KOLOM_TEGENPARTIJ]) parts.push(String(rij[KOLOM_TEGENPARTIJ]).trim());
+    if (rij[KOLOM_MEDEDELING]) parts.push(String(rij[KOLOM_MEDEDELING]).trim());
+    if (rij[KOLOM_DETAILS]) parts.push(String(rij[KOLOM_DETAILS]).trim());
+    let t = parts.join(" ");
     
-    // Verwijder 'BETALING MET DEBETKAART NUMMER' en alle X'en en cijfers die erna komen
-    t = t.replace(/BETALING MET DEBETKAART NUMMER [0-9A-ZX\s]+/gi, '');
+    // Snij de lelijke bank-teksten exact weg
+    t = t.replace(/BETALING MET DEBETKAART NUMMER [A-Z0-9\sX*]+/gi, ' ');
+    t = t.replace(/BANCONTACT BANKREFERENTIE\s*:\s*[A-Z0-9\-]+/gi, ' ');
+    t = t.replace(/VALUTADATUM\s*:\s*\d{2}\/\d{2}\/\d{4}/gi, ' ');
+    t = t.replace(/Naam van de tegenpartij\s*:/gi, ' ');
+    t = t.replace(/Mededeling\s*:/gi, ' ');
+    t = t.replace(/Volgnummer\s*:\s*\w+/gi, ' ');
     
-    // Verwijder overbodige bank referentie staarten
-    t = t.replace(/BANCONTACT BANKREFERENTIE.*$/gi, '');
-    t = t.replace(/VALUTADATUM.*$/gi, '');
+    // Datums en tijdstippen los in de tekst (bijv. 24/05/2026 11:50) weghalen
+    t = t.replace(/\d{2}\/\d{2}\/\d{4}\s*\d{2}:\d{2}/gi, ' ');
+    t = t.replace(/\b\d{2}\/\d{2}\/\d{4}\b/gi, ' ');
     
-    // Verwijder extra spaties en streepjes aan het begin of einde
-    t = t.replace(/^[-\s]+|[-\s]+$/g, '').trim();
+    // Spaties en vreemde leestekens fatsoeneren
+    t = t.replace(/\s+/g, ' ').trim();
+    t = t.replace(/^[-:/]+|[-:/]+$/g, '').trim();
     
+    if (t.length < 2) return "Transactie (Geen details)";
     return t;
 }
 
@@ -223,10 +232,7 @@ function updateWeekbudgetUI() {
 
         let rijJaar = parseInt(haalJaar(rij[KOLOM_DATUM]));
         let rijMaand = haalRuweMaand(rij[KOLOM_DATUM]);
-        
-        if (rijJaar === doelJaar && rijMaand === doelMaand) {
-            totaalMaandUitgegeven += Math.abs(bedrag);
-        }
+        if (rijJaar === doelJaar && rijMaand === doelMaand) totaalMaandUitgegeven += Math.abs(bedrag);
 
         const d = parseDatumToDate(rij[KOLOM_DATUM]);
         if(!d) return;
@@ -234,19 +240,9 @@ function updateWeekbudgetUI() {
         if (getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
             totaalUitgegeven += Math.abs(bedrag);
             
-            let parts = [];
-            if (rij[KOLOM_TEGENPARTIJ]) parts.push(String(rij[KOLOM_TEGENPARTIJ]).trim());
-            if (rij[KOLOM_MEDEDELING]) parts.push(String(rij[KOLOM_MEDEDELING]).trim());
-            if (rij[KOLOM_DETAILS]) parts.push(String(rij[KOLOM_DETAILS]).trim());
-            
-            let weergaveNaam = parts.length > 0 ? parts.join(" ") : "Supermarkt (Geen details)";
-            
-            // HIER PASSEN WE DE NIEUWE STOFZUIGER TOE:
-            weergaveNaam = schoonNaamOp(weergaveNaam);
-
             gecombineerdeLijst.push({ 
                 datumObj: d, datumStr: rij[KOLOM_DATUM], 
-                naam: weergaveNaam, 
+                naam: schoonNaamOp(rij), // Gebruik de nieuwe stofzuiger hier!
                 bedrag: Math.abs(bedrag), bron: 'bank' 
             });
         }
@@ -353,6 +349,7 @@ function updateDashboard() {
 function verwerkData(data, huidigJaar) {
     let inkomsten = 0, uitgaven = 0, vast = 0, grootsteUitgave = 0;
     const maanden = {}, cats = {}, groepen = {}, hgBreakdown = {};
+    const trendData = { 'Supermarkt': {}, 'Bol': {}, 'Kleren': {} };
 
     data.forEach(r => {
         let b = typeof r[KOLOM_BEDRAG] === 'string' ? parseFloat(r[KOLOM_BEDRAG].replace(',','.')) : r[KOLOM_BEDRAG];
@@ -367,10 +364,19 @@ function verwerkData(data, huidigJaar) {
             else m = `${dParts[2]}-${dParts[1]}`;
         }
 
+        if (!maanden[m]) {
+            maanden[m] = { in: 0, uit: 0 };
+            trendData['Supermarkt'][m] = 0;
+            trendData['Bol'][m] = 0;
+            trendData['Kleren'][m] = 0;
+        }
+
         if (b > 0) {
             inkomsten += b;
+            maanden[m].in += b;
         } else {
             uitgaven += b;
+            maanden[m].uit += b;
             if (b < grootsteUitgave) grootsteUitgave = b;
             if (VASTE_CATEGORIEEN.includes(cat)) vast += Math.abs(b);
             
@@ -380,9 +386,12 @@ function verwerkData(data, huidigJaar) {
             if (!hgBreakdown[hg]) hgBreakdown[hg] = {};
             if (!hgBreakdown[hg][cat]) hgBreakdown[hg][cat] = 0;
             hgBreakdown[hg][cat] += Math.abs(b);
+            
+            // Verzamel data voor de lijngrafiek
+            if (cat === 'Supermarkt') trendData['Supermarkt'][m] += Math.abs(b);
+            if (cat === 'Bol') trendData['Bol'][m] += Math.abs(b);
+            if (cat === 'Kleren') trendData['Kleren'][m] += Math.abs(b);
         }
-        if (!maanden[m]) maanden[m] = { in: 0, uit: 0 };
-        b > 0 ? maanden[m].in += b : maanden[m].uit += b;
     });
 
     document.getElementById('jaarInkomsten').innerText = formatBedrag(inkomsten);
@@ -412,7 +421,7 @@ function verwerkData(data, huidigJaar) {
     if(document.getElementById('maandBody')) document.getElementById('maandBody').innerHTML = maandHtml;
 
     bouwDrillDownTabel(hgBreakdown, groepen);
-    tekenGrafieken(maanden, groepen, gesorteerdeMaanden);
+    tekenGrafieken(maanden, groepen, gesorteerdeMaanden, trendData);
 }
 
 function bouwDrillDownTabel(breakdown, totalen) {
@@ -458,7 +467,7 @@ function bouwDrillDownTabel(breakdown, totalen) {
     });
 }
 
-function tekenGrafieken(mndData, grpData, gesorteerdeMaanden) {
+function tekenGrafieken(mndData, grpData, gesorteerdeMaanden, trendData) {
     const ctxMaand = document.getElementById('maandGrafiek').getContext('2d');
     if (mijnMaandGrafiek) mijnMaandGrafiek.destroy();
     
@@ -487,35 +496,95 @@ function tekenGrafieken(mndData, grpData, gesorteerdeMaanden) {
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
     });
+
+    // NIEUW: De Lijngrafiek
+    const ctxTrend = document.getElementById('trendGrafiek').getContext('2d');
+    if (mijnTrendGrafiek) mijnTrendGrafiek.destroy();
+    
+    // Verwijder 'Onbekend' labels indien die erin zitten
+    const geldigeMaanden = gesorteerdeMaanden.filter(m => m !== 'Onbekend');
+    const labelsLijn = geldigeMaanden.map(m => m.split('-')[1] + '-' + m.split('-')[0]);
+
+    mijnTrendGrafiek = new Chart(ctxTrend, {
+        type: 'line',
+        data: {
+            labels: labelsLijn,
+            datasets: [
+                {
+                    label: 'Supermarkt',
+                    data: geldigeMaanden.map(m => trendData['Supermarkt'][m]),
+                    borderColor: '#059669', // Groen
+                    backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                    borderWidth: 2, fill: true, tension: 0.3
+                },
+                {
+                    label: 'Online (Bol.com)',
+                    data: geldigeMaanden.map(m => trendData['Bol'][m]),
+                    borderColor: '#3b82f6', // Blauw
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2, fill: true, tension: 0.3
+                },
+                {
+                    label: 'Kleren',
+                    data: geldigeMaanden.map(m => trendData['Kleren'][m]),
+                    borderColor: '#ec4899', // Roze
+                    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                    borderWidth: 2, fill: true, tension: 0.3
+                }
+            ]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
 }
 
+// NIEUW: Een super strakke, georganiseerde tabel onderaan in plaats van alle rommelige bankkolommen
 function bouwTransactieTabel(data) {
-    if(data.length === 0) return;
-    const headers = Object.keys(data[0]);
-    let headerHtml = '<tr>';
-    headers.forEach(h => { headerHtml += `<th>${h}</th>`; });
-    headerHtml += `<th>Hoofdgroep</th><th>Categorie</th></tr>`; 
+    if(data.length === 0) {
+        document.getElementById('tableHead').innerHTML = '';
+        document.getElementById('tableBody').innerHTML = '<tr><td style="padding: 20px; text-align: center;">Geen transacties gevonden.</td></tr>';
+        return;
+    }
+
+    // We hardcoden hier enkel de nuttige kolommen
+    let headerHtml = `<tr>
+        <th>Datum</th>
+        <th>Omschrijving (Opgeschoond)</th>
+        <th>Bedrag</th>
+        <th>Hoofdgroep</th>
+        <th>Categorie</th>
+    </tr>`; 
     document.getElementById('tableHead').innerHTML = headerHtml;
 
     let bodyHtml = '';
     data.slice(0, 150).forEach(rij => {
-        bodyHtml += '<tr>';
-        headers.forEach(h => {
-            let waarde = rij[h];
-            if (h === KOLOM_BEDRAG) {
-                let num = typeof waarde === 'string' ? parseFloat(waarde.replace(',', '.')) : waarde;
-                if (!isNaN(num) && num !== null) {
-                    let cssClass = num > 0 ? 'tekst-positief' : 'tekst-negatief';
-                    waarde = `<span class="${cssClass}">${formatBedrag(num)}</span>`;
-                }
-            }
-            bodyHtml += `<td>${waarde !== null && waarde !== undefined ? waarde : ''}</td>`;
-        });
+        let datum = rij[KOLOM_DATUM] || '';
+        let omschrijving = schoonNaamOp(rij);
+        let bedrag = rij[KOLOM_BEDRAG];
+        
+        let num = typeof bedrag === 'string' ? parseFloat(bedrag.replace(',', '.')) : bedrag;
+        let bedragHtml = '';
+        if (!isNaN(num) && num !== null) {
+            let cssClass = num > 0 ? 'tekst-positief' : 'tekst-negatief';
+            bedragHtml = `<span class="${cssClass}"><strong>${formatBedrag(num)}</strong></span>`;
+        }
+        
         const berekendeCat = bepaalCategorie(rij);
         const berekendeHoofd = bepaalHoofdgroep(berekendeCat);
         const isOverig = berekendeCat === "Overig";
-        bodyHtml += `<td><span class="status-badge" style="background-color: transparent; border: 1px solid #ccc; color: #666;">${berekendeHoofd}</span></td>`;
-        bodyHtml += `<td><span class="status-badge" style="background-color: ${isOverig ? "#ffeedd" : "#e1e8ed"}; color: ${isOverig ? "#d35400" : "#34495e"};">${berekendeCat}</span></td></tr>`;
+        
+        bodyHtml += `<tr>
+            <td>${datum}</td>
+            <td><div style="max-width: 350px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${omschrijving}">${omschrijving}</div></td>
+            <td>${bedragHtml}</td>
+            <td><span class="status-badge" style="background-color: transparent; border: 1px solid #ccc; color: #666;">${berekendeHoofd}</span></td>
+            <td><span class="status-badge" style="background-color: ${isOverig ? "#ffeedd" : "#e1e8ed"}; color: ${isOverig ? "#d35400" : "#34495e"};">${berekendeCat}</span></td>
+        </tr>`;
     });
+    
     document.getElementById('tableBody').innerHTML = bodyHtml;
 }

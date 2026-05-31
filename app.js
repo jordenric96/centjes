@@ -18,7 +18,7 @@ const CATEGORIE_RULES = {
     "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES"], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA"],
     "Dreamland": ["Dreamland"],
-    "Online": ["Bol", "Amazon", "Coolblue", "Ali"],
+    "Online": ["Bol", "Amazon", "Coolblue"],
     "Ijsjes": ["Ijs", "Krijmerie", "Martinique", "Choconelly"],
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],

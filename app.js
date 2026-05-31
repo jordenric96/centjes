@@ -44,6 +44,7 @@ const CATEGORIE_RULES = {
 };
 
 const HOOFD_GROEPEN = {
+    const HOOFD_GROEPEN = {
     "Eten en drinken": ["Supermarkt", "Frietjes", "Restaurant", "Ijsjes", "Broodjes", "Bakker", "Sushi"],
     "Huis": ["Bouwmarkt", "Meubelwinkel", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland", "Ketel onderhoud", "Bloemen"],
     "Verzorging": ["Apotheek", "Kapper", "Kine", "Bril"],
@@ -52,8 +53,9 @@ const HOOFD_GROEPEN = {
     "Hobby's": ["Hobby's"],
     "Lou & Noé": ["Creche", "Dreamland"],
     "Auto": ["Tanken"],
-    "Shoppen & Kleding": ["Kleren", "Online"]
-     "Shoppen & Kleding": ["Visa", "Geldafhaling"]
+    "Shoppen & Kleding": ["Kleren", "Online"], // Komma niet vergeten!
+    "Bank & Geldzaken": ["Visa", "Geldafhaling"] // Een aparte groep houdt je shopping-stats zuiver
+};
 };
 
 const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"];

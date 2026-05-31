@@ -19,8 +19,8 @@
         .week-nav button:hover { background: #e5e7eb; }
         .week-titel { font-size: 1.2rem; font-weight: 800; color: #1e3a8a; margin: 0; }
         .bron-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: 600; }
-        .bron-bank { background: #fee2e2; color: #991b1b; } /* Rood voor bank */
-        .bron-sheet { background: #d1fae5; color: #065f46; } /* Groen voor gepland budget */
+        .bron-bank { background: #fee2e2; color: #991b1b; } 
+        .bron-sheet { background: #d1fae5; color: #065f46; } 
     </style>
 </head>
 <body>
@@ -124,21 +124,26 @@
                 <button onclick="veranderWeek(1)">Volgende Week ▶</button>
             </div>
 
-            <section class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-bottom: 25px;">
+            <section class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 25px;">
                 <div class="card totaal-card">
                     <h3 style="color: #059669;">Gepland Budget</h3>
-                    <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 5px;">Via je nieuwe sheet</div>
+                    <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 5px;">Via nieuwe sheet</div>
                     <p id="weekBudgetTonen" class="bedrag" style="color: #059669;">€ 0.00</p>
                 </div>
                 <div class="card totaal-card">
                     <h3 style="color: #dc2626;">Werkelijk Uitgegeven</h3>
-                    <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 5px;">Via de bank (Supermarkt)</div>
+                    <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 5px;">Bank (Deze Week)</div>
                     <p id="weekUitgegevenTonen" class="bedrag negatief">€ 0.00</p>
                 </div>
                 <div class="card totaal-card" id="weekVerschilKaart">
-                    <h3>Verschil</h3>
-                    <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 5px;">Blijf je onder budget?</div>
+                    <h3>Week Verschil</h3>
+                    <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 5px;">Onder of over budget?</div>
                     <p id="weekVerschilTonen" class="bedrag">€ 0.00</p>
+                </div>
+                <div class="card totaal-card" style="background-color: #eff6ff;">
+                    <h3 style="color: #1e3a8a;" id="maandTitel">Maand Totaal</h3>
+                    <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 5px;">Bank (Hele Maand)</div>
+                    <p id="maandUitgegevenTonen" class="bedrag negatief">€ 0.00</p>
                 </div>
             </section>
 
@@ -155,7 +160,7 @@
                             </tr>
                         </thead>
                         <tbody id="weekTransactiesBody">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </section>

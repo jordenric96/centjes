@@ -13,7 +13,7 @@ const KOLOM_TYPE = "Type verrichting";
 const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH", "WIBRA", "FOODCOMPANY"],
     "Creche": ["disneyland"],
-    "Automaat werk": ["SELECTA 2850 BOOM"],
+    "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG"],
     "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES"], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA"],

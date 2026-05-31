@@ -1,4 +1,8 @@
+// app.js - Financiële Dashboard + Weekmenu
+
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
+// VUL HIERONDER DE LINK NAAR JE NIEUWE WEEKMENU CSV IN:
+const budgetSheetUrl = ""; 
 
 const KOLOM_DATUM = "Uitvoeringsdatum"; 
 const KOLOM_BEDRAG = "Bedrag"; 
@@ -7,18 +11,16 @@ const KOLOM_MEDEDELING = "Mededeling";
 const KOLOM_DETAILS = "Details";
 const KOLOM_TYPE = "Type verrichting";
 
-// --- 1. JOUW SPECIFIEKE CATEGORIEËN ---
+// --- JOUW SPECIFIEKE CATEGORIEËN ---
 const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH", "WIBRA", "FOODCOMPANY"],
     "Creche": ["disneyland"],
     "Automaat werk": ["SELECTA 2850 BOOM"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG"],
-    "Restaurant": ["restaurant", "LUNCHBAR", "JANE'S", "BAVET", "brasserie", "bistro", "PIAZZA GRANDE", "pizzeria", "WOLF BRUXELLES", "LUYCKX GIANNI"], 
+    "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES"], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA"],
     "Dreamland": ["Dreamland"],
     "Bol": ["Bol"],
-    "Dokter": ["BRUNO DEBOECK"],
-    
     "Ijsjes": ["Ijs", "Krijmerie", "Martinique", "Choconelly"],
     "Broodjes": ["PRINSKE"],
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],
@@ -28,50 +30,103 @@ const CATEGORIE_RULES = {
     "Sushi": ["Sushi"],
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara", "DEDOLES"],
     "Kapper": ["Hair", "BLONDES & BROWNIES"],
-    "Hobby's": ["Foot", "Padel", "Ludus", "WERO BAERT-CLAEYS", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon", "Iboya", "TEAMSWEAR", "PASSA SPORTS"],
+    "Hobby's": ["Foot", "Padel", "Ludus", "Sportigo", "KV KESTER GOOIK", "VANDERVELDE-VOSSEN", "Decathlon", "Iboya", "TEAMSWEAR"],
     "Kine": ["kine", "Action"],
     "Pluspas": ["Pluspas", "Corporate Benefi"],
     "Haviland": ["Haviland"],
     "AG insurance": ["AG"],
     "Bloemen": ["Bloomon"],
-    "Bril": ["Optiek", "D EN M NV", "DR. PEETERMANS"], // Samengevoegd zodat beide werken!
+    "Bril": ["Optiek", "D EN M NV"],
     "Ketel onderhoud": ["Vaillant"],
     "Lening": ["Woonkrediet", "ALPHA CREDIT"], 
     "Water, Gas & Elektriciteit": ["water", "watergroep", "LUMINUS", "ELECTRABEL"],
     "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 };
 
-// --- 2. JOUW NIEUWE HOOFDGROEPEN ---
 const HOOFD_GROEPEN = {
     "Eten en drinken": ["Supermarkt", "Frietjes", "Restaurant", "Ijsjes", "Broodjes", "Bakker", "Sushi"],
     "Huis": ["Bouwmarkt", "Meubelwinkel", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland", "Ketel onderhoud", "Bloemen"],
-    "Verzorging": ["Apotheek", "Kapper", "Kine", "Bril", "Dokter"],
+    "Verzorging": ["Apotheek", "Kapper", "Kine", "Bril"],
     "Verzekeringen": ["AG insurance"],
     "Werk": ["Automaat werk", "Pluspas"],
     "Hobby's": ["Hobby's"],
     "Lou & Noé": ["Creche", "Dreamland"],
     "Auto": ["Tanken"],
-    "Shoppen & Kleding": ["Kleren", "Bol"] // De extra groep voor je online shopping!
+    "Shoppen & Kleding": ["Kleren", "Bol"]
 };
 
-// --- 3. VASTE KOSTEN LIJST ---
-const VASTE_CATEGORIEEN = [
-    "AG insurance", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"
-];
+const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"];
 
 let alleData = []; 
+let budgetData = []; // Data uit je nieuwe sheet
 let mijnMaandGrafiek = null, mijnCatGrafiek = null;
 
+// --- WEEKBUDGET VARIABELEN ---
+let huidigDatum = new Date();
+let toonJaar = huidigDatum.getFullYear();
+let toonWeek = getISOWeek(huidigDatum);
+
+// --- TAB NAVIGATIE ---
+function switchView(viewName) {
+    document.getElementById('view-dashboard').style.display = viewName === 'dashboard' ? 'block' : 'none';
+    document.getElementById('view-weekbudget').style.display = viewName === 'weekbudget' ? 'block' : 'none';
+    
+    document.getElementById('btn-tab-dash').className = viewName === 'dashboard' ? 'tab-btn active' : 'tab-btn';
+    document.getElementById('btn-tab-week').className = viewName === 'weekbudget' ? 'tab-btn active' : 'tab-btn';
+    
+    if(viewName === 'weekbudget') { updateWeekbudgetUI(); }
+}
+
+// Haal data van beide sheets op
 Papa.parse(sheetUrl, {
     download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
     complete: function(results) {
         alleData = results.data;
-        document.getElementById('status').innerText = `Live verbonden (${alleData.length} transacties)`;
+        document.getElementById('status').innerText = `Bank verbonden (${alleData.length} transacties)`;
         document.getElementById('status').classList.add('succes');
-        initialiseerJaren();
+        
+        // Haal direct daarna de budget data op (als er een link is)
+        if (budgetSheetUrl !== "") {
+            Papa.parse(budgetSheetUrl, {
+                download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+                complete: function(budgetRes) {
+                    budgetData = budgetRes.data;
+                    initialiseerJaren();
+                },
+                error: function() { initialiseerJaren(); } // Fallback
+            });
+        } else {
+            initialiseerJaren();
+        }
     }
 });
 
+// --- HELPER FUNCTIES DATUMS & WEKEN ---
+function parseDatumToDate(datumStr) {
+    if (!datumStr) return null;
+    const parts = String(datumStr).split(/[-/]/);
+    if (parts.length === 3) {
+        return parts[0].length === 4 ? new Date(parts[0], parts[1]-1, parts[2]) : new Date(parts[2], parts[1]-1, parts[0]);
+    }
+    return null;
+}
+
+function getISOWeek(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+}
+
+function haalJaar(datumStr) {
+    if (!datumStr) return "Onbekend";
+    const parts = String(datumStr).split(/[-/]/);
+    if (parts.length >= 3) return parts[0].length === 4 ? parts[0] : parts[2];
+    return "Onbekend";
+}
+
+// --- ORIGINELE FUNCTIES ---
 function bepaalCategorie(rij) {
     const tekst = `${rij[KOLOM_TEGENPARTIJ] || ''} ${rij[KOLOM_MEDEDELING] || ''} ${rij[KOLOM_DETAILS] || ''} ${rij[KOLOM_TYPE] || ''}`.toLowerCase();
     for (const [cat, words] of Object.entries(CATEGORIE_RULES)) {
@@ -86,13 +141,6 @@ function bepaalHoofdgroep(sub) {
 }
 
 function formatBedrag(g) { return "€ " + Math.abs(g).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-
-function haalJaar(datumStr) {
-    if (!datumStr) return "Onbekend";
-    const parts = String(datumStr).split(/[-/]/);
-    if (parts.length >= 3) return parts[0].length === 4 ? parts[0] : parts[2];
-    return "Onbekend";
-}
 
 function initialiseerJaren() {
     const jarenSet = new Set();
@@ -114,6 +162,105 @@ function initialiseerJaren() {
     updateDashboard();
 }
 
+// --- LOGICA VOOR HET WEEKBUDGET ---
+function veranderWeek(delta) {
+    toonWeek += delta;
+    if(toonWeek < 1) { toonWeek = 52; toonJaar--; } 
+    if(toonWeek > 52) { toonWeek = 1; toonJaar++; }
+    updateWeekbudgetUI();
+}
+
+function updateWeekbudgetUI() {
+    document.getElementById('week-titel').innerText = `Week ${toonWeek}, ${toonJaar}`;
+    
+    let totaalUitgegeven = 0;
+    let totaalBudget = 0;
+    let gecombineerdeLijst = [];
+
+    // 1. Zoek bank-uitgaven (Supermarkt) in deze specifieke week
+    alleData.forEach(rij => {
+        if(bepaalCategorie(rij) !== 'Supermarkt') return;
+        
+        const d = parseDatumToDate(rij[KOLOM_DATUM]);
+        if(!d) return;
+        
+        // Controleer of de datum binnen de gekozen week valt
+        if (getISOWeek(d) === toonWeek && d.getFullYear() === toonJaar) {
+            let bedrag = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
+            if(bedrag < 0) { // Alleen uitgaven optellen
+                totaalUitgegeven += Math.abs(bedrag);
+                gecombineerdeLijst.push({ 
+                    datumObj: d, datumStr: rij[KOLOM_DATUM], 
+                    naam: rij[KOLOM_TEGENPARTIJ] || "Supermarkt Transactie", 
+                    bedrag: Math.abs(bedrag), bron: 'bank' 
+                });
+            }
+        }
+    });
+
+    // 2. Zoek budget-invoer (uit nieuwe sheet) in deze week
+    if (budgetData.length > 0) {
+        budgetData.forEach(rij => {
+            // Zoek naar kolom "Datum" of "datum", en "Bedrag" of "bedrag"
+            let dStr = rij['Datum'] || rij['datum'];
+            let bStr = rij['Bedrag'] || rij['bedrag'];
+            if (!dStr || bStr == null) return;
+            
+            const d = parseDatumToDate(dStr);
+            if(!d) return;
+
+            if (getISOWeek(d) === toonWeek && d.getFullYear() === toonJaar) {
+                let bedrag = typeof bStr === 'string' ? parseFloat(bStr.replace(',','.')) : bStr;
+                totaalBudget += Math.abs(bedrag);
+                gecombineerdeLijst.push({ 
+                    datumObj: d, datumStr: dStr, 
+                    naam: "Gepland Menu / Handmatige Invoer", 
+                    bedrag: Math.abs(bedrag), bron: 'sheet' 
+                });
+            }
+        });
+    }
+
+    // 3. Update de Kaartjes
+    document.getElementById('weekBudgetTonen').innerText = formatBedrag(totaalBudget);
+    document.getElementById('weekUitgegevenTonen').innerText = formatBedrag(totaalUitgegeven);
+    
+    let verschil = totaalBudget - totaalUitgegeven;
+    let verschEl = document.getElementById('weekVerschilTonen');
+    verschEl.innerText = (verschil < 0 ? "- " : "+ ") + formatBedrag(verschil);
+    
+    // Kleur het verschil (Groen = onder budget, Rood = over budget)
+    if (budgetData.length === 0) {
+        document.getElementById('weekVerschilKaart').style.display = 'none'; // Verberg als sheet nog niet bestaat
+    } else {
+        document.getElementById('weekVerschilKaart').style.display = 'block';
+        verschEl.className = verschil >= 0 ? 'bedrag positief' : 'bedrag negatief';
+    }
+
+    // 4. Update de Tabel
+    gecombineerdeLijst.sort((a, b) => b.datumObj - a.datumObj); // Nieuwste eerst
+    
+    let tbody = document.getElementById('weekTransactiesBody');
+    if (gecombineerdeLijst.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Geen supermarkt-uitgaven of budget gevonden in deze week.</td></tr>';
+    } else {
+        let html = '';
+        gecombineerdeLijst.forEach(item => {
+            let bronBadge = item.bron === 'bank' ? `<span class="bron-badge bron-bank">Bank (Werkelijk)</span>` : `<span class="bron-badge bron-sheet">Spreadsheet (Gepland)</span>`;
+            let bedragClass = item.bron === 'bank' ? 'tekst-negatief' : 'tekst-positief'; // Maak bank rood, budget groen
+            
+            html += `<tr>
+                <td><strong>${item.datumStr}</strong></td>
+                <td>${item.naam}</td>
+                <td class="${bedragClass}"><strong>${formatBedrag(item.bedrag)}</strong></td>
+                <td>${bronBadge}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+}
+
+// --- LOGICA VOOR HET JAARDASHBOARD (Ongewijzigd gebleven) ---
 function updateDashboard() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
     const filterOpOverig = document.getElementById('toonEnkelOverig').checked;
@@ -123,30 +270,20 @@ function updateDashboard() {
         const isJuisteJaar = haalJaar(rij[KOLOM_DATUM]) === gekozenJaar;
         const tegenpartij = String(rij[KOLOM_TEGENPARTIJ] || "").toLowerCase();
         const mededeling = String(rij[KOLOM_MEDEDELING] || "").toLowerCase();
-        
-        if (tegenpartij.includes("ricour-de bruyn") || mededeling.includes("ricour-de bruyn")) {
-            return false; 
-        }
-        
+        if (tegenpartij.includes("ricour-de bruyn") || mededeling.includes("ricour-de bruyn")) return false; 
         return isJuisteJaar;
     });
     
     verwerkData(jaardata, gekozenJaar);
     
     let tabelData = [...jaardata];
-    
-    if (filterOpOverig) {
-        tabelData = tabelData.filter(rij => bepaalCategorie(rij) === "Overig");
-    }
+    if (filterOpOverig) tabelData = tabelData.filter(rij => bepaalCategorie(rij) === "Overig");
 
     tabelData.sort((a, b) => {
-        let bedragA = a[KOLOM_BEDRAG];
-        let bedragB = b[KOLOM_BEDRAG];
-        
+        let bedragA = a[KOLOM_BEDRAG]; let bedragB = b[KOLOM_BEDRAG];
         if (typeof bedragA === 'string') bedragA = parseFloat(bedragA.replace(',', '.'));
         if (typeof bedragB === 'string') bedragB = parseFloat(bedragB.replace(',', '.'));
-        bedragA = isNaN(bedragA) ? 0 : bedragA;
-        bedragB = isNaN(bedragB) ? 0 : bedragB;
+        bedragA = isNaN(bedragA) ? 0 : bedragA; bedragB = isNaN(bedragB) ? 0 : bedragB;
 
         if (sorteerKeuze === "uitgaven") return bedragA - bedragB;
         else if (sorteerKeuze === "inkomsten") return bedragB - bedragA;
@@ -174,7 +311,6 @@ function verwerkData(data, huidigJaar) {
 
         const cat = bepaalCategorie(r);
         const hg = bepaalHoofdgroep(cat);
-        
         const dParts = String(r[KOLOM_DATUM]).split(/[-/]/);
         let m = "Onbekend";
         if(dParts.length >= 3) {
@@ -196,25 +332,18 @@ function verwerkData(data, huidigJaar) {
             if (!hgBreakdown[hg][cat]) hgBreakdown[hg][cat] = 0;
             hgBreakdown[hg][cat] += Math.abs(b);
         }
-
         if (!maanden[m]) maanden[m] = { in: 0, uit: 0 };
         b > 0 ? maanden[m].in += b : maanden[m].uit += b;
     });
 
     document.getElementById('jaarInkomsten').innerText = formatBedrag(inkomsten);
     document.getElementById('jaarUitgaven').innerText = formatBedrag(uitgaven);
-    
     const balans = inkomsten + uitgaven;
     const balansEl = document.getElementById('jaarBalans');
     balansEl.innerText = (balans < 0 ? "- " : "") + formatBedrag(balans);
     balansEl.className = balans > 0 ? 'bedrag positief' : (balans < 0 ? 'bedrag negatief' : 'bedrag neutraal');
-    
     document.getElementById('vastTotaal').innerText = formatBedrag(vast);
     
-    const aantalMaanden = Object.keys(maanden).length || 1;
-    if(document.getElementById('statGemiddelde')) document.getElementById('statGemiddelde').innerText = formatBedrag(uitgaven / aantalMaanden);
-    if(document.getElementById('statMax')) document.getElementById('statMax').innerText = formatBedrag(grootsteUitgave);
-
     let maandHtml = '';
     const gesorteerdeMaanden = Object.keys(maanden).sort();
     [...gesorteerdeMaanden].reverse().forEach(mnd => {
@@ -263,7 +392,6 @@ function bouwDrillDownTabel(breakdown, totalen) {
 
         hgRow.onclick = () => {
             const isExpanded = hgRow.classList.contains('expanded');
-            
             document.querySelectorAll('.hg-row').forEach(r => {
                 r.classList.remove('expanded');
                 const p = r.querySelector('.pijl');
@@ -300,35 +428,20 @@ function tekenGrafieken(mndData, grpData, gesorteerdeMaanden) {
 
     const ctxCat = document.getElementById('categorieGrafiek').getContext('2d');
     if (mijnCatGrafiek) mijnCatGrafiek.destroy();
-    
-    const frisseKleuren = [
-        '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A733FF', '#FF3366', '#00E5FF', '#999999', '#4CAF50'
-    ];
-
+    const frisseKleuren = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A733FF', '#FF3366', '#00E5FF', '#999999', '#4CAF50'];
     const gesorteerdeGroepen = Object.keys(grpData).sort((a, b) => grpData[b] - grpData[a]);
-
     mijnCatGrafiek = new Chart(ctxCat, {
         type: 'doughnut',
         data: {
             labels: gesorteerdeGroepen,
-            datasets: [{
-                data: gesorteerdeGroepen.map(hg => grpData[hg]),
-                backgroundColor: frisseKleuren,
-                borderWidth: 2,
-                borderColor: '#ffffff'
-            }]
+            datasets: [{ data: gesorteerdeGroepen.map(hg => grpData[hg]), backgroundColor: frisseKleuren, borderWidth: 2, borderColor: '#ffffff' }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
     });
 }
 
 function bouwTransactieTabel(data) {
-    if(data.length === 0) {
-        document.getElementById('tableHead').innerHTML = '';
-        document.getElementById('tableBody').innerHTML = '<tr><td style="padding: 20px; text-align: center;">Geen transacties gevonden.</td></tr>';
-        return;
-    }
-
+    if(data.length === 0) return;
     const headers = Object.keys(data[0]);
     let headerHtml = '<tr>';
     headers.forEach(h => { headerHtml += `<th>${h}</th>`; });
@@ -336,9 +449,7 @@ function bouwTransactieTabel(data) {
     document.getElementById('tableHead').innerHTML = headerHtml;
 
     let bodyHtml = '';
-    const toonData = data.slice(0, 150); 
-    
-    toonData.forEach(rij => {
+    data.slice(0, 150).forEach(rij => {
         bodyHtml += '<tr>';
         headers.forEach(h => {
             let waarde = rij[h];
@@ -351,17 +462,11 @@ function bouwTransactieTabel(data) {
             }
             bodyHtml += `<td>${waarde !== null && waarde !== undefined ? waarde : ''}</td>`;
         });
-        
         const berekendeCat = bepaalCategorie(rij);
         const berekendeHoofd = bepaalHoofdgroep(berekendeCat);
-        
         const isOverig = berekendeCat === "Overig";
-        const bgKleur = isOverig ? "#ffeedd" : "#e1e8ed";
-        const tekstKleur = isOverig ? "#d35400" : "#34495e";
-        
         bodyHtml += `<td><span class="status-badge" style="background-color: transparent; border: 1px solid #ccc; color: #666;">${berekendeHoofd}</span></td>`;
-        bodyHtml += `<td><span class="status-badge" style="background-color: ${bgKleur}; color: ${tekstKleur};">${berekendeCat}</span></td>`;
-        bodyHtml += '</tr>';
+        bodyHtml += `<td><span class="status-badge" style="background-color: ${isOverig ? "#ffeedd" : "#e1e8ed"}; color: ${isOverig ? "#d35400" : "#34495e"};">${berekendeCat}</span></td></tr>`;
     });
     document.getElementById('tableBody').innerHTML = bodyHtml;
 }

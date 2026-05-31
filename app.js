@@ -16,7 +16,7 @@ const CATEGORIE_RULES = {
     "Creche": ["disneyland", "kinderopvang", "creche"],
     "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG"],
-    "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES", "DIMATTO", "FRAMILIE", "BUYSSE MOBIELE"], 
+    "Restaurant": ["restaurant", "brasserie", "bistro", "pizzeria", "WOLF BRUXELLES", "DIMATTO", "FRAMILIE", "BUYSSE MOBIELE", "LUYCKX GIANNI "], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA", "VANNEROM"],
     "Dreamland": ["Dreamland"],
     "Online": ["Bol", "Amazon", "Coolblue", "VANDEN BORRE", "Mediamarkt", "VEEPEE"],

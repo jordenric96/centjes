@@ -43,7 +43,6 @@ const CATEGORIE_RULES = {
     "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"]
 };
 
-const HOOFD_GROEPEN = {
     const HOOFD_GROEPEN = {
     "Eten en drinken": ["Supermarkt", "Frietjes", "Restaurant", "Ijsjes", "Broodjes", "Bakker", "Sushi"],
     "Huis": ["Bouwmarkt", "Meubelwinkel", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland", "Ketel onderhoud", "Bloemen"],
@@ -56,7 +55,7 @@ const HOOFD_GROEPEN = {
     "Shoppen & Kleding": ["Kleren", "Online"], // Komma niet vergeten!
     "Bank & Geldzaken": ["Visa", "Geldafhaling"] // Een aparte groep houdt je shopping-stats zuiver
 };
-};
+
 
 const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"];
 

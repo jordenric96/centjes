@@ -14,14 +14,21 @@
         .tab-btn { background: transparent; border: none; padding: 10px 20px; font-size: 1.1rem; font-weight: 700; color: #6b7280; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
         .tab-btn:hover { background: #f3f4f6; color: #1f2937; }
         .tab-btn.active { background: #1e3a8a; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        
         .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
         .week-nav button { padding: 8px 16px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-weight: 600; color: #374151; transition: background 0.2s; }
         .week-nav button:hover { background: #e5e7eb; }
-        .week-titel { font-size: 1.2rem; font-weight: 800; color: #1e3a8a; margin: 0; }
+        .week-titel { font-size: 1.2rem; font-weight: 800; color: #1e3a8a; margin: 0; text-align: center; }
+        
         .bron-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: 600; }
         .bron-bank { background: #fee2e2; color: #991b1b; } 
         .bron-sheet { background: #d1fae5; color: #065f46; } 
+        
         .filter-select { padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-size: 0.9rem; color: #334155; background-color: #f8fafc; }
+        
+        /* NIEUW: Grid specifiek voor de trendgrafieken (1 op GSM, max 2 op desktop) */
+        .trend-grid { display: grid; gap: 20px; grid-template-columns: 1fr; margin-bottom: 30px; }
+        @media (min-width: 800px) { .trend-grid { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
 <body>
@@ -75,22 +82,22 @@
                 </section>
             </div>
             
-            <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-bottom: 30px;">
+            <div class="trend-grid">
                 <section class="card" style="padding-bottom: 10px;">
                     <h3 style="font-size: 1rem; color: #059669; border-bottom: none; margin-bottom: 5px;">🛒 Supermarkt</h3>
-                    <div style="position: relative; height: 180px;"><canvas id="trendSupermarkt"></canvas></div>
-                </section>
-                <section class="card" style="padding-bottom: 10px;">
-                    <h3 style="font-size: 1rem; color: #3b82f6; border-bottom: none; margin-bottom: 5px;">📦 Online</h3>
-                    <div style="position: relative; height: 180px;"><canvas id="trendOnline"></canvas></div>
-                </section>
-                <section class="card" style="padding-bottom: 10px;">
-                    <h3 style="font-size: 1rem; color: #ec4899; border-bottom: none; margin-bottom: 5px;">👕 Kleding</h3>
-                    <div style="position: relative; height: 180px;"><canvas id="trendKleren"></canvas></div>
+                    <div style="position: relative; height: 200px;"><canvas id="trendSupermarkt"></canvas></div>
                 </section>
                 <section class="card" style="padding-bottom: 10px;">
                     <h3 style="font-size: 1rem; color: #eab308; border-bottom: none; margin-bottom: 5px;">🍟 Frietjes</h3>
-                    <div style="position: relative; height: 180px;"><canvas id="trendFrietjes"></canvas></div>
+                    <div style="position: relative; height: 200px;"><canvas id="trendFrietjes"></canvas></div>
+                </section>
+                <section class="card" style="padding-bottom: 10px;">
+                    <h3 style="font-size: 1rem; color: #3b82f6; border-bottom: none; margin-bottom: 5px;">📦 Online</h3>
+                    <div style="position: relative; height: 200px;"><canvas id="trendOnline"></canvas></div>
+                </section>
+                <section class="card" style="padding-bottom: 10px;">
+                    <h3 style="font-size: 1rem; color: #ec4899; border-bottom: none; margin-bottom: 5px;">👕 Kleding</h3>
+                    <div style="position: relative; height: 200px;"><canvas id="trendKleren"></canvas></div>
                 </section>
             </div>
 
@@ -151,9 +158,9 @@
 
         <div id="view-weekbudget" style="display: none;">
             <div class="week-nav">
-                <button onclick="veranderWeek(-1)">◀ Vorige Week</button>
-                <h2 id="week-titel" class="week-titel">Week --, 2026</h2>
-                <button onclick="veranderWeek(1)">Volgende Week ▶</button>
+                <button onclick="veranderWeek(-1)">◀ Vorige</button>
+                <div id="week-titel" class="week-titel">Week --, 2026</div>
+                <button onclick="veranderWeek(1)">Volgende ▶</button>
             </div>
 
             <section class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 25px;">

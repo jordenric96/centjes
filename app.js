@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Strakke Lijngrafieken & Multi-Year Trends)
+// app.js - Financiële Dashboard met slimme Filters en Stofzuiger 2.0
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 const budgetSheetUrl = ""; // VUL HIER DE LINK NAAR JE NIEUWE WEEKMENU CSV IN
@@ -87,11 +87,11 @@ Papa.parse(sheetUrl, {
         if (budgetSheetUrl !== "") {
             Papa.parse(budgetSheetUrl, {
                 download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
-                complete: function(budgetRes) { budgetData = budgetRes.data; initialiseerJaren(); },
-                error: function() { initialiseerJaren(); } 
+                complete: function(budgetRes) { budgetData = budgetRes.data; initialiseerDropdowns(); },
+                error: function() { initialiseerDropdowns(); } 
             });
         } else {
-            initialiseerJaren();
+            initialiseerDropdowns();
         }
     }
 });
@@ -156,6 +156,7 @@ function bepaalHoofdgroep(sub) {
 
 function formatBedrag(g) { return "€ " + Math.abs(g).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
+// STOFZUIGER 2.0 - Veilig en schoon
 function schoonNaamOp(rij) {
     let parts = [];
     if (rij[KOLOM_TEGENPARTIJ]) parts.push(String(rij[KOLOM_TEGENPARTIJ]).trim());
@@ -163,37 +164,63 @@ function schoonNaamOp(rij) {
     if (rij[KOLOM_DETAILS]) parts.push(String(rij[KOLOM_DETAILS]).trim());
     let t = parts.join(" ");
     
-    t = t.replace(/BETALING MET DEBETKAART NUMMER [A-Z0-9\sX*]+/gi, ' ');
-    t = t.replace(/BANCONTACT BANKREFERENTIE\s*:\s*[A-Z0-9\-]+/gi, ' ');
-    t = t.replace(/VALUTADATUM\s*:\s*\d{2}\/\d{2}\/\d{4}/gi, ' ');
-    t = t.replace(/Naam van de tegenpartij\s*:/gi, ' ');
-    t = t.replace(/Mededeling\s*:/gi, ' ');
-    t = t.replace(/Volgnummer\s*:\s*\w+/gi, ' ');
-    t = t.replace(/\d{2}\/\d{2}\/\d{4}\s*\d{2}:\d{2}/gi, ' ');
-    t = t.replace(/\b\d{2}\/\d{2}\/\d{4}\b/gi, ' ');
+    // Alleen exact de kaartnummers en letters/kruisjes verwijderen. Shop naam blijft heel!
+    t = t.replace(/BETALING MET DEBETKAART NUMMER\s+[\d\sX*]{15,30}/gi, ''); 
+    
+    t = t.replace(/BANCONTACT BANKREFERENTIE\s*:\s*[A-Z0-9\-]+/gi, '');
+    t = t.replace(/VALUTADATUM\s*:\s*\d{2}\/\d{2}\/\d{4}/gi, '');
+    t = t.replace(/Naam van de tegenpartij\s*:/gi, '');
+    t = t.replace(/Mededeling\s*:/gi, '');
+    t = t.replace(/Volgnummer\s*:\s*\w+/gi, '');
+    t = t.replace(/\bBANCONTACT\b/gi, '');
+    
+    // Verwijder losse datums en tijden (zoals /05/2026 of 29/05/2026 08:28)
+    t = t.replace(/\/?\d{2}\/\d{4}\s*\d{2}:\d{2}/gi, '');
+    t = t.replace(/\/?\d{2}\/\d{4}/gi, '');
+    t = t.replace(/\d{2}\/\d{2}\/\d{4}/gi, '');
+    
     t = t.replace(/\s+/g, ' ').trim();
-    t = t.replace(/^[-:/]+|[-:/]+$/g, '').trim();
+    t = t.replace(/^[-:/,]+|[-:/,]+$/g, '').trim();
     
     if (t.length < 2) return "Transactie (Geen details)";
     return t;
 }
 
-function initialiseerJaren() {
+function initialiseerDropdowns() {
+    // 1. Jaren
     const jarenSet = new Set();
     alleData.forEach(rij => {
         const jaar = haalJaar(rij[KOLOM_DATUM]);
         if (jaar !== "Onbekend") jarenSet.add(jaar);
     });
-
-    const select = document.getElementById('jaarSelect');
-    select.innerHTML = ''; 
+    const jaarSelect = document.getElementById('jaarSelect');
+    jaarSelect.innerHTML = ''; 
     Array.from(jarenSet).sort().reverse().forEach(j => { 
-        const o = document.createElement('option'); o.value = j; o.text = j; select.add(o); 
+        jaarSelect.innerHTML += `<option value="${j}">${j}</option>`; 
     });
+
+    // 2. Maanden
+    const mndSelect = document.getElementById('filterMaand');
+    const maandenNaam = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+    mndSelect.innerHTML = '<option value="alle">Alle Maanden</option>';
+    maandenNaam.forEach((m, i) => { mndSelect.innerHTML += `<option value="${i}">${m}</option>`; });
+
+    // 3. Hoofdgroepen
+    const hgSelect = document.getElementById('filterHoofdgroep');
+    hgSelect.innerHTML = '<option value="alle">Alle Hoofdgroepen</option>';
+    Object.keys(HOOFD_GROEPEN).sort().forEach(hg => { hgSelect.innerHTML += `<option value="${hg}">${hg}</option>`; });
+    hgSelect.innerHTML += '<option value="Overig">Overig</option>';
+
+    // 4. Categorieën
+    const catSelect = document.getElementById('filterCategorie');
+    catSelect.innerHTML = '<option value="alle">Alle Categorieën</option>';
+    Object.keys(CATEGORIE_RULES).sort().forEach(cat => { catSelect.innerHTML += `<option value="${cat}">${cat}</option>`; });
+    catSelect.innerHTML += '<option value="Overig">Overig</option>';
     
-    select.addEventListener('change', updateDashboard);
-    document.getElementById('sorteerSelect').addEventListener('change', updateDashboard);
-    document.getElementById('toonEnkelOverig').addEventListener('change', updateDashboard);
+    // Listeners
+    ['jaarSelect', 'filterMaand', 'filterHoofdgroep', 'filterCategorie', 'sorteerSelect', 'toonEnkelOverig'].forEach(id => {
+        document.getElementById(id).addEventListener('change', updateDashboard);
+    });
     
     updateDashboard();
 }
@@ -223,7 +250,6 @@ function updateWeekbudgetUI() {
 
     alleData.forEach(rij => {
         if(bepaalCategorie(rij) !== 'Supermarkt') return;
-        
         let bedrag = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
         if(isNaN(bedrag) || bedrag >= 0) return; 
 
@@ -307,6 +333,10 @@ function updateDashboard() {
     const filterOpOverig = document.getElementById('toonEnkelOverig').checked;
     const sorteerKeuze = document.getElementById('sorteerSelect').value;
     
+    const fMaand = document.getElementById('filterMaand').value;
+    const fHoofd = document.getElementById('filterHoofdgroep').value;
+    const fCat = document.getElementById('filterCategorie').value;
+    
     const jaardata = alleData.filter(rij => {
         const isJuisteJaar = haalJaar(rij[KOLOM_DATUM]) === gekozenJaar;
         const tegenpartij = String(rij[KOLOM_TEGENPARTIJ] || "").toLowerCase();
@@ -316,10 +346,24 @@ function updateDashboard() {
     });
     
     verwerkData(jaardata, gekozenJaar);
-    bouwTrendGrafieken(); // Teken de multi-year grafieken voor ALLE data
+    bouwTrendGrafieken(); 
     
     let tabelData = [...jaardata];
-    if (filterOpOverig) tabelData = tabelData.filter(rij => bepaalCategorie(rij) === "Overig");
+    
+    // PAS DE NIEUWE FILTERS TOE OP DE TABEL ONDERAAN
+    if (filterOpOverig) {
+        tabelData = tabelData.filter(rij => bepaalCategorie(rij) === "Overig");
+    } else {
+        if (fMaand !== "alle") {
+            tabelData = tabelData.filter(rij => haalRuweMaand(rij[KOLOM_DATUM]) === parseInt(fMaand));
+        }
+        if (fHoofd !== "alle") {
+            tabelData = tabelData.filter(rij => bepaalHoofdgroep(bepaalCategorie(rij)) === fHoofd);
+        }
+        if (fCat !== "alle") {
+            tabelData = tabelData.filter(rij => bepaalCategorie(rij) === fCat);
+        }
+    }
 
     tabelData.sort((a, b) => {
         let bedragA = a[KOLOM_BEDRAG]; let bedragB = b[KOLOM_BEDRAG];
@@ -462,7 +506,6 @@ function tekenBasisGrafieken(mndData, grpData, gesorteerdeMaanden) {
     const ctxMaand = document.getElementById('maandGrafiek').getContext('2d');
     if (mijnMaandGrafiek) mijnMaandGrafiek.destroy();
     
-    // Maak nette maandnamen voor de x-as
     const maandLabels = gesorteerdeMaanden.map(m => {
         if(m === "Onbekend") return m;
         let tmpD = m.split('-');
@@ -471,7 +514,6 @@ function tekenBasisGrafieken(mndData, grpData, gesorteerdeMaanden) {
         return mNaam.charAt(0).toUpperCase() + mNaam.slice(1);
     });
 
-    // Deze is nu óók een strakke lijngrafiek!
     mijnMaandGrafiek = new Chart(ctxMaand, {
         type: 'line',
         data: {
@@ -502,7 +544,6 @@ function tekenBasisGrafieken(mndData, grpData, gesorteerdeMaanden) {
     });
 }
 
-// NIEUW: De functie die AL je jaren verzamelt en naast elkaar legt in de 3 grafieken
 function bouwTrendGrafieken() {
     const maandLabels = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
     const trendData = { 'Supermarkt': {}, 'Online': {}, 'Kleren': {} };
@@ -510,7 +551,7 @@ function bouwTrendGrafieken() {
 
     alleData.forEach(rij => {
         let b = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
-        if (isNaN(b) || b >= 0) return; // Alleen uitgaven
+        if (isNaN(b) || b >= 0) return; 
 
         const cat = bepaalCategorie(rij);
         if (['Supermarkt', 'Online', 'Kleren'].includes(cat)) {
@@ -525,14 +566,12 @@ function bouwTrendGrafieken() {
         }
     });
 
-    const jarenArray = Array.from(jarenSet).sort().reverse(); // [2026, 2025, 2024...]
+    const jarenArray = Array.from(jarenSet).sort().reverse(); 
 
-    // RGB Kleuren voor de categorieën
     const baseColors = { 'Supermarkt': [5, 150, 105], 'Online': [59, 130, 246], 'Kleren': [236, 72, 153] };
 
     const buildDatasets = (cat) => {
         return jarenArray.map((jaar, index) => {
-            // Actuele jaar is fel en dik, voorgaande jaren vervagen steeds meer op de achtergrond
             let opacity = index === 0 ? 1 : Math.max(0.2, 0.6 - (index * 0.2));
             let borderWidth = index === 0 ? 3 : 2;
             let c = baseColors[cat];
@@ -543,7 +582,7 @@ function bouwTrendGrafieken() {
                 borderColor: `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${opacity})`,
                 backgroundColor: `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${opacity})`,
                 borderWidth: borderWidth,
-                fill: false, // Pure lijngrafiek!
+                fill: false, 
                 tension: 0.4,
                 pointRadius: index === 0 ? 4 : 0, 
                 pointHoverRadius: 6

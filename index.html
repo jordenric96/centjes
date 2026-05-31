@@ -21,6 +21,8 @@
         .bron-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: 600; }
         .bron-bank { background: #fee2e2; color: #991b1b; } 
         .bron-sheet { background: #d1fae5; color: #065f46; } 
+        /* Styling voor de nieuwe filters */
+        .filter-select { padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-size: 0.9rem; color: #334155; background-color: #f8fafc; }
     </style>
 </head>
 <body>
@@ -41,7 +43,7 @@
         <div id="view-dashboard">
             <div class="filter-sectie" style="margin-bottom: 25px;">
                 <label for="jaarSelect">Selecteer jaar: </label>
-                <select id="jaarSelect"></select>
+                <select id="jaarSelect" class="filter-select"></select>
             </div>
 
             <section class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 25px;">
@@ -111,18 +113,31 @@
             </div>
 
             <section class="card" style="margin-top: 30px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0;">Banktransacties</h3>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="sorteerSelect">
-                            <option value="datum">Datum (Nieuwste eerst)</option>
-                            <option value="uitgaven">Hoogste Uitgave</option>
-                        </select>
-                        <label style="font-size: 0.85rem; cursor: pointer;">
-                            <input type="checkbox" id="toonEnkelOverig"> Enkel Overig
+                <h3 style="margin-bottom: 10px;">Banktransacties</h3>
+                
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px; flex-wrap: wrap; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; flex-grow: 1;">
+                        <select id="filterMaand" class="filter-select"></select>
+                        <select id="filterHoofdgroep" class="filter-select"></select>
+                        <select id="filterCategorie" class="filter-select"></select>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">
+                            Sorteren: 
+                            <select id="sorteerSelect" class="filter-select" style="margin-left: 5px;">
+                                <option value="datum">Nieuwste eerst</option>
+                                <option value="uitgaven">Grootste uitgave</option>
+                            </select>
+                        </label>
+
+                        <label style="cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #d35400; background: #ffeedd; padding: 6px 12px; border-radius: 6px;">
+                            <input type="checkbox" id="toonEnkelOverig" style="margin-right: 5px;"> Enkel "Overig"
                         </label>
                     </div>
                 </div>
+
                 <div class="tabel-wrapper grote-tabel">
                     <table id="dataTable">
                         <thead id="tableHead"></thead>

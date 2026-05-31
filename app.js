@@ -32,6 +32,7 @@ const CATEGORIE_RULES = {
     "Kine": ["kine", "Action"],
     "Pluspas": ["Pluspas", "Corporate Benefi"],
     "Haviland": ["Haviland"],
+    "Haviland": ["AFREKENING VISA KREDIETKAART"],
     "AG insurance": ["AG"],
     "Bloemen": ["Bloomon"],
     "Bril": ["Optiek", "D EN M NV"],

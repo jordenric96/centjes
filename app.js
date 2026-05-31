@@ -52,7 +52,8 @@ const HOOFD_GROEPEN = {
     "Hobby's": ["Hobby's"],
     "Lou & Noé": ["Creche", "Dreamland"],
     "Auto": ["Tanken"],
-    "Shoppen & Kleding": ["Kleren", "Bol"]
+    "Shoppen & Kleding": ["Kleren", "Online"]
+     "Shoppen & Kleding": ["Visa", "Geldafhaling"]
 };
 
 const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"];

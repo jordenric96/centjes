@@ -1,11 +1,13 @@
-// app.js - Financiële Dashboard (Volledige jaren tonen in trends)
+// app.js - Financiële Dashboard (Top 5 & Nieuwe Supermarkt Link)
 
-// De 3 links naar jouw aparte tabbladen:
+// De links naar jouw aparte tabbladen:
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1758541093&single=true&output=csv"
 ];
-const supermarktSheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1527123423&single=true&output=csv"; 
+
+// JOUW NIEUWE LINK VOOR DE KASSATICKETS:
+const supermarktSheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1934138929&single=true&output=csv"; 
 
 const KOLOM_DATUM = "Uitvoeringsdatum"; 
 const KOLOM_BEDRAG = "Bedrag"; 
@@ -156,8 +158,10 @@ function parseDatumToDate(datumStr) {
     if (!datumStr) return null;
     const parts = String(datumStr).split(/[-/]/);
     if (parts.length === 3) {
-        let y = parts[0].length === 4 ? parts[0] : parts[2];
-        let d = parts[0].length === 4 ? parts[2] : parts[0];
+        // Formulier-data (Tijdstempel) kan soms tijd bevatten, bijv "1/6/2026 14:00"
+        let part0 = parts[0].split(' ')[0]; 
+        let y = part0.length === 4 ? part0 : parts[2].split(' ')[0];
+        let d = part0.length === 4 ? parts[2].split(' ')[0] : part0;
         let m = parts[1];
         let date = new Date(y, m-1, d);
         if (!isNaN(date.getTime())) return date;
@@ -193,7 +197,8 @@ function haalJaar(datumStr) {
     if (!datumStr) return "Onbekend";
     const parts = String(datumStr).split(/[-/]/);
     if (parts.length >= 3) {
-        let j = parts[0].length === 4 ? parts[0] : parts[2];
+        let part0 = parts[0].split(' ')[0];
+        let j = part0.length === 4 ? part0 : parts[2].split(' ')[0];
         if(!isNaN(parseInt(j))) return j;
     }
     return "Onbekend";
@@ -274,28 +279,22 @@ function initialiseerDropdowns() {
         const jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM)); 
         if (jaar !== "Onbekend") jarenSet.add(jaar); 
     });
-    
     jarenSet.add(String(new Date().getFullYear()));
-    
     const jaarSelect = document.getElementById('jaarSelect');
     jaarSelect.innerHTML = ''; 
     Array.from(jarenSet).sort().reverse().forEach(j => { jaarSelect.innerHTML += `<option value="${j}">${j}</option>`; });
-    
     const mndSelect = document.getElementById('filterMaand');
     const maandenNaam = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
     mndSelect.innerHTML = '<option value="alle">Alle Maanden</option>';
     maandenNaam.forEach((m, i) => { mndSelect.innerHTML += `<option value="${i}">${m}</option>`; });
-    
     const hgSelect = document.getElementById('filterHoofdgroep');
     hgSelect.innerHTML = '<option value="alle">Alle Hoofdgroepen</option>';
     Object.keys(HOOFD_GROEPEN).sort().forEach(hg => { hgSelect.innerHTML += `<option value="${hg}">${hg}</option>`; });
     hgSelect.innerHTML += '<option value="Overig">Overig</option>';
-    
     const catSelect = document.getElementById('filterCategorie');
     catSelect.innerHTML = '<option value="alle">Alle Categorieën</option>';
     Object.keys(CATEGORIE_RULES).sort().forEach(cat => { catSelect.innerHTML += `<option value="${cat}">${cat}</option>`; });
     catSelect.innerHTML += '<option value="Overig">Overig</option>';
-    
     ['jaarSelect', 'filterMaand', 'filterHoofdgroep', 'filterCategorie', 'sorteerSelect', 'toonEnkelOverig'].forEach(id => {
         document.getElementById(id).addEventListener('change', updateDashboard);
     });
@@ -318,57 +317,39 @@ function updateWeekbudgetUI() {
     let datumBereik = `${refDate.toLocaleDateString('nl-BE', formatOpt)} - ${endOfWeek.toLocaleDateString('nl-BE', formatOpt)}`;
     let toonMaandNaam = refDate.toLocaleString('nl-BE', { month: 'long' });
     toonMaandNaam = toonMaandNaam.charAt(0).toUpperCase() + toonMaandNaam.slice(1);
-    
     document.getElementById('week-titel').innerHTML = `Week ${toonWeek}, ${toonJaar}<br><span style="font-size:0.85rem; color:#64748b; font-weight:600;">${datumBereik}</span>`;
     document.getElementById('maandTitel').innerText = `Totaal ${toonMaandNaam}`;
     
     let totaalUitgegeven = 0, totaalMaandUitgegeven = 0, gecombineerdeLijst = [];
-    
     alleData.forEach(rij => {
         if(bepaalCategorie(rij) !== 'Supermarkt') return;
-        
         let bedrag = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
         if(isNaN(bedrag) || bedrag >= 0) return; 
-        
         let absoluteBedrag = Math.abs(bedrag);
         let rijJaar = parseInt(haalJaar(haalWaarde(rij, KOLOM_DATUM)));
         let rijMaand = haalRuweMaand(haalWaarde(rij, KOLOM_DATUM));
-        
         if (rijJaar === doelJaar && rijMaand === doelMaand) totaalMaandUitgegeven += absoluteBedrag;
-        
         const d = parseDatumToDate(haalWaarde(rij, KOLOM_DATUM));
         if(d && getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
             totaalUitgegeven += absoluteBedrag;
-            gecombineerdeLijst.push({ datumObj: d, datumStr: haalWaarde(rij, KOLOM_DATUM), naam: schoonNaamOp(rij), bedrag: absoluteBedrag });
+            gecombineerdeLijst.push({ datumObj: d, datumStr: haalWaarde(rij, KOLOM_DATUM).split(' ')[0], naam: schoonNaamOp(rij), bedrag: absoluteBedrag });
         }
     });
 
     if (budgetData.length > 0) {
         budgetData.forEach(rij => {
-            let dStr = haalWaarde(rij, 'datum');
-            let bStr = haalWaarde(rij, 'bedrag');
+            let dStr = haalWaarde(rij, 'datum') || haalWaarde(rij, 'tijdstempel'); 
+            let bStr = haalWaarde(rij, 'bedrag'); 
             let winkel = haalWaarde(rij, 'winkel') || 'Handmatige bon';
-            
             if (!dStr || bStr == null) return;
-            
             let bedrag = parseBedragNumber(bStr);
             if (isNaN(bedrag)) return;
-            
             let absoluteBedrag = Math.abs(bedrag);
-            let d = parseDatumToDate(dStr);
-            
-            if (d && d.getFullYear() === doelJaar && d.getMonth() === doelMaand) {
-                totaalMaandUitgegeven += absoluteBedrag;
-            }
-
+            let d = parseDatumToDate(String(dStr));
+            if (d && d.getFullYear() === doelJaar && d.getMonth() === doelMaand) totaalMaandUitgegeven += absoluteBedrag;
             if(d && getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
                 totaalUitgegeven += absoluteBedrag;
-                gecombineerdeLijst.push({ 
-                    datumObj: d, 
-                    datumStr: dStr, 
-                    naam: "✍️ " + winkel, 
-                    bedrag: absoluteBedrag 
-                });
+                gecombineerdeLijst.push({ datumObj: d, datumStr: String(dStr).split(' ')[0], naam: "✍️ " + winkel, bedrag: absoluteBedrag });
             }
         });
     }
@@ -377,7 +358,6 @@ function updateWeekbudgetUI() {
     let tonenEl = document.getElementById('weekUitgegevenTonen');
     tonenEl.innerText = formatBedrag(totaalUitgegeven);
     tonenEl.className = uitgavenKleur;
-
     document.getElementById('maandUitgegevenTonen').innerText = formatBedrag(totaalMaandUitgegeven);
     gecombineerdeLijst.sort((a, b) => b.datumObj - a.datumObj); 
     
@@ -416,19 +396,17 @@ function updateDashboard() {
 function verwerkData(data, huidigJaar) {
     let inkomsten = 0, uitgaven = 0, vast = 0;
     let spaarBalansVanafJuni = 0; 
-    let actueelJaar = parseInt(huidigJaar);
-    let startDatumSpaardoel = new Date(actueelJaar, 5, 1); 
+    let startDatumSpaardoel = new Date(parseInt(huidigJaar), 5, 1); 
 
     const maanden = {}, cats = {}, groepen = {}, hgBreakdown = {};
+    const top5Data = {}; 
     
     data.forEach(r => {
         let b = parseBedragNumber(haalWaarde(r, KOLOM_BEDRAG));
         if (isNaN(b)) return;
 
         const d = parseDatumToDate(haalWaarde(r, KOLOM_DATUM));
-        if (d && d.getTime() >= startDatumSpaardoel.getTime()) {
-            spaarBalansVanafJuni += b;
-        }
+        if (d && d.getTime() >= startDatumSpaardoel.getTime()) { spaarBalansVanafJuni += b; }
 
         const cat = bepaalCategorie(r), hg = bepaalHoofdgroep(cat), datumVal = haalWaarde(r, KOLOM_DATUM);
         let jaar = haalJaar(datumVal);
@@ -437,10 +415,21 @@ function verwerkData(data, huidigJaar) {
         
         if (!maanden[m]) maanden[m] = { in: 0, uit: 0 };
         
-        if (b > 0) { inkomsten += b; maanden[m].in += b; } 
-        else {
+        if (b > 0) { 
+            inkomsten += b; maanden[m].in += b; 
+        } else {
             uitgaven += b; maanden[m].uit += b;
-            if (VASTE_CATEGORIEEN.includes(cat)) vast += Math.abs(b);
+            
+            if (VASTE_CATEGORIEEN.includes(cat)) {
+                vast += Math.abs(b);
+            } else {
+                let winkelNaam = schoonNaamOp(r);
+                if (winkelNaam !== "Transactie (Geen details)") {
+                    if (!top5Data[winkelNaam]) top5Data[winkelNaam] = 0;
+                    top5Data[winkelNaam] += Math.abs(b);
+                }
+            }
+
             if (!cats[cat]) cats[cat] = 0; cats[cat] += Math.abs(b);
             if (!groepen[hg]) groepen[hg] = 0; groepen[hg] += Math.abs(b);
             if (!hgBreakdown[hg]) hgBreakdown[hg] = {};
@@ -457,30 +446,41 @@ function verwerkData(data, huidigJaar) {
     
     const spaarDoel = 2000;
     let percentage = (spaarBalansVanafJuni / spaarDoel) * 100;
-    if (percentage < 0) percentage = 0;
-    if (percentage > 100) percentage = 100;
-    
-    const bar = document.getElementById('spaardoelBar');
-    const tekst = document.getElementById('spaardoelTekst');
+    if (percentage < 0) percentage = 0; if (percentage > 100) percentage = 100;
+    const bar = document.getElementById('spaardoelBar'); const tekst = document.getElementById('spaardoelTekst');
     if (bar && tekst) {
-        bar.style.width = percentage + '%';
-        tekst.innerText = formatBedrag(spaarBalansVanafJuni);
-        if (spaarBalansVanafJuni >= spaarDoel) { bar.style.backgroundColor = '#059669'; } 
-        else { bar.style.backgroundColor = '#10b981'; }
+        bar.style.width = percentage + '%'; tekst.innerText = formatBedrag(spaarBalansVanafJuni);
+        if (spaarBalansVanafJuni >= spaarDoel) bar.style.backgroundColor = '#059669'; else bar.style.backgroundColor = '#10b981';
     }
     
     const gesorteerdeMaanden = Object.keys(maanden).sort();
-    
     document.getElementById('maandBody').innerHTML = [...gesorteerdeMaanden].reverse().map(mnd => {
         if(mnd === "Onbekend") return '';
-        const md = maanden[mnd], mBalans = md.in + md.uit;
-        let tmpD = mnd.split('-');
+        const md = maanden[mnd], mBalans = md.in + md.uit; let tmpD = mnd.split('-');
         let mNaam = new Date(tmpD[0], parseInt(tmpD[1])-1, 1).toLocaleString('nl-BE', { month: 'short' });
         return `<tr><td><strong>${mNaam.charAt(0).toUpperCase() + mNaam.slice(1)} ${tmpD[0]}</strong></td><td class="tekst-positief">${formatBedrag(md.in)}</td><td class="tekst-negatief">${formatBedrag(md.uit)}</td><td class="${mBalans >= 0 ? "tekst-positief" : "tekst-negatief"}"><strong>${formatBedrag(mBalans)}</strong></td></tr>`;
     }).join('');
     
     bouwDrillDownTabel(hgBreakdown, groepen);
+    bouwTop5Tabel(top5Data); 
     tekenBasisGrafieken(maanden, groepen, gesorteerdeMaanden);
+}
+
+function bouwTop5Tabel(top5Data) {
+    let top5Array = Object.keys(top5Data).map(naam => { return { naam: naam, totaal: top5Data[naam] }; });
+    top5Array.sort((a, b) => b.totaal - a.totaal);
+    
+    let top5Html = '';
+    top5Array.slice(0, 5).forEach((item, index) => {
+        let medaille = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '▪️';
+        top5Html += `<tr>
+            <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;" title="${item.naam}">${medaille} <strong>${item.naam}</strong></td>
+            <td style="text-align: right; color: #ef4444; font-weight: 700;">${formatBedrag(item.totaal)}</td>
+        </tr>`;
+    });
+    
+    let top5Body = document.getElementById('top5Body');
+    if (top5Body) { top5Body.innerHTML = top5Html || '<tr><td colspan="2" style="text-align:center;">Geen gegevens gevonden.</td></tr>'; }
 }
 
 function bouwDrillDownTabel(breakdown, totalen) {
@@ -549,13 +549,8 @@ function tekenBasisGrafieken(mndData, grpData, gesorteerdeMaanden) {
     });
 }
 
-// UPDATE: De grafieken tonen nu standaard 12 maanden, huidige jaar stopt na deze maand, eerdere jaren lopen tot december.
 function bouwTrendGrafieken() {
-    let huidigeDatum = new Date();
-    let huidigJaarNummer = huidigeDatum.getFullYear();
-    let huidigeMaandIndex = huidigeDatum.getMonth(); 
-    
-    // Altijd 12 maanden op de X-as
+    let huidigeDatum = new Date(); let huidigJaarNummer = huidigeDatum.getFullYear(); let huidigeMaandIndex = huidigeDatum.getMonth(); 
     const maandLabels = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
     const trendData = { 'Supermarkt': {}, 'Online': {}, 'Frietjes': {} };
     const jarenSet = new Set();
@@ -566,13 +561,8 @@ function bouwTrendGrafieken() {
         if (isNaN(b) || b >= 0) return; 
         const cat = bepaalCategorie(rij);
         if (['Supermarkt', 'Online', 'Frietjes'].includes(cat)) {
-            let jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM));
-            let maand = haalRuweMaand(haalWaarde(rij, KOLOM_DATUM));
-            if (jaar !== "Onbekend" && maand !== null) { 
-                jarenSet.add(jaar); 
-                if (!trendData[cat][jaar]) trendData[cat][jaar] = Array(12).fill(0); 
-                trendData[cat][jaar][maand] += Math.abs(b); 
-            }
+            let jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM)), maand = haalRuweMaand(haalWaarde(rij, KOLOM_DATUM));
+            if (jaar !== "Onbekend" && maand !== null) { jarenSet.add(jaar); if (!trendData[cat][jaar]) trendData[cat][jaar] = Array(12).fill(0); trendData[cat][jaar][maand] += Math.abs(b); }
         }
     });
     
@@ -583,44 +573,20 @@ function bouwTrendGrafieken() {
         let isHuidigJaar = (parseInt(jaar) === huidigJaarNummer);
         let ruweData = trendData[cat][jaar] || Array(12).fill(0);
         let geplotteData = [];
-        
         for (let i = 0; i < 12; i++) {
-            // Als we in het huidige jaar zitten, tekenen we geen lijn in de toekomstige maanden
-            if (isHuidigJaar && i > huidigeMaandIndex) {
-                geplotteData.push(null);
-            } else {
-                geplotteData.push(ruweData[i]);
-            }
+            if (isHuidigJaar && i > huidigeMaandIndex) geplotteData.push(null);
+            else geplotteData.push(ruweData[i]);
         }
-
-        return { 
-            label: jaar, 
-            data: geplotteData, 
-            borderColor: `rgba(${baseColors[cat].join(',')}, ${index === 0 ? 1 : 0.5})`, 
-            borderWidth: index === 0 ? 3 : 2, 
-            fill: false, 
-            tension: 0.4 
-        };
+        return { label: jaar, data: geplotteData, borderColor: `rgba(${baseColors[cat].join(',')}, ${index === 0 ? 1 : 0.5})`, borderWidth: index === 0 ? 3 : 2, fill: false, tension: 0.4 };
     });
 
-    const baseOptions = { 
-        responsive: true, 
-        maintainAspectRatio: false, 
-        plugins: { legend: { position: 'top' } }, 
-        scales: { y: { beginAtZero: true } },
-        spanGaps: false // Breek de lijn af na de huidige maand
-    };
+    const baseOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } }, spanGaps: false };
     
     ['Sup', 'Fri', 'Onl'].forEach((s, i) => {
         const cat = ['Supermarkt', 'Frietjes', 'Online'][i];
-        
-        // Totaal updaten
         let dataVoorTotaal = trendData[cat][gekozenJaar] || Array(12).fill(0);
         let somJaar = dataVoorTotaal.reduce((a, b) => a + b, 0);
-        if(document.getElementById('ytd-' + cat)) {
-            document.getElementById('ytd-' + cat).innerText = formatBedrag(somJaar);
-        }
-
+        if(document.getElementById('ytd-' + cat)) document.getElementById('ytd-' + cat).innerText = formatBedrag(somJaar);
         if (window['chart'+s]) window['chart'+s].destroy();
         window['chart'+s] = new Chart(document.getElementById('trend'+cat).getContext('2d'), { type: 'line', data: { labels: maandLabels, datasets: buildDatasets(cat) }, options: baseOptions });
     });

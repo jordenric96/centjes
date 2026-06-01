@@ -18,38 +18,38 @@
         html, body { width: 100%; max-width: 100vw; overflow-x: hidden; margin: 0; padding: 0; background-color: var(--bg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         * { box-sizing: border-box; }
         
-        .hoofd-container { width: 100%; max-width: 100vw; padding: 10px; overflow-x: hidden; }
-        .card { width: 100%; min-width: 0; max-width: 100%; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 15px; margin-bottom: 20px; overflow: hidden; }
+        .hoofd-container { width: 100%; max-width: 100vw; padding: 8px; overflow-x: hidden; }
+        .card { width: 100%; min-width: 0; max-width: 100%; background: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 12px; margin-bottom: 12px; overflow: hidden; }
         
-        .dashboard-grid { display: grid; gap: 10px; grid-template-columns: repeat(2, 1fr); width: 100%; min-width: 0; margin-bottom: 20px; }
-        .content-grid { display: grid; gap: 15px; grid-template-columns: 1fr; width: 100%; min-width: 0; margin-bottom: 20px; }
-        .trend-grid { display: grid; gap: 15px; grid-template-columns: 1fr; width: 100%; min-width: 0; margin-bottom: 20px; }
+        .dashboard-grid { display: grid; gap: 8px; grid-template-columns: repeat(2, 1fr); width: 100%; min-width: 0; margin-bottom: 12px; }
+        .content-grid { display: grid; gap: 12px; grid-template-columns: 1fr; width: 100%; min-width: 0; margin-bottom: 12px; }
+        .trend-grid { display: grid; gap: 12px; grid-template-columns: 1fr; width: 100%; min-width: 0; margin-bottom: 12px; }
         
         @media (min-width: 768px) {
             .content-grid { grid-template-columns: 1fr 1fr; }
             .trend-grid { grid-template-columns: 1fr 1fr; }
-            .hoofd-container { padding: 20px; }
+            .hoofd-container { padding: 15px; }
             .filter-row { flex-direction: row !important; }
         }
 
-        .tabel-wrapper { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: block; margin-top: 10px; }
+        .tabel-wrapper { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: block; margin-top: 5px; }
         table { width: 100%; min-width: 320px; border-collapse: collapse; text-align: left; }
-        th, td { padding: 8px 5px; font-size: 0.85rem; border-bottom: 1px solid #e5e7eb; }
+        th, td { padding: 6px 4px; font-size: 0.85rem; border-bottom: 1px solid #e5e7eb; }
         .omschrijving-cel { max-width: 35vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .chart-container { position: relative; width: 100%; max-width: 100%; height: 250px; }
         .trend-container { position: relative; width: 100%; max-width: 100%; height: 200px; }
         
-        .tab-container { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; flex-wrap: wrap; }
-        .tab-btn { flex: 1; min-width: 100px; background: transparent; border: none; padding: 10px; font-size: 0.95rem; font-weight: 700; color: #64748b; border-radius: 8px; cursor: pointer; text-align: center; }
+        .tab-container { display: flex; gap: 6px; margin-bottom: 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; min-width: 90px; background: transparent; border: none; padding: 8px; font-size: 0.9rem; font-weight: 700; color: #64748b; border-radius: 8px; cursor: pointer; text-align: center; }
         .tab-btn.active { background: var(--primary); color: white; }
         
-        .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 10px; border-radius: 12px; border: 1px solid #e5e7eb; gap: 10px; }
-        .week-nav button { padding: 8px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-weight: 600; color: #374151; }
-        .week-titel { font-size: 1rem; font-weight: 800; color: var(--primary); text-align: center; flex: 1; }
+        .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: white; padding: 8px; border-radius: 10px; border: 1px solid #e5e7eb; gap: 10px; }
+        .week-nav button { padding: 6px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-weight: 600; color: #374151; }
+        .week-titel { font-size: 0.95rem; font-weight: 800; color: var(--primary); text-align: center; flex: 1; margin: 0; }
         
-        .filter-row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; width: 100%; }
-        .filter-select { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; font-size: 0.9rem; }
+        .filter-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; width: 100%; }
+        .filter-select { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; font-size: 0.85rem; }
         
         .bedrag { font-weight: 800; }
         .positief { color: var(--success); }
@@ -57,17 +57,17 @@
         .neutraal { color: var(--primary); }
         .tekst-positief { color: var(--success); font-weight: 600; }
         .tekst-negatief { color: var(--danger); font-weight: 600; }
-        .totaal-card h3 { font-size: 0.75rem; margin: 0 0 5px 0; color: #64748b; }
-        .totaal-card p { margin: 0; font-size: 1.25rem; }
-        .header-titel { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
-        .header-titel h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
-        .status-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: #e2e8f0; }
+        .totaal-card h3 { font-size: 0.7rem; margin: 0 0 4px 0; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .totaal-card p { margin: 0; font-size: 1.15rem; }
+        .header-titel { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+        .header-titel h1 { margin: 0; font-size: 1.3rem; color: var(--primary); }
+        .status-badge { font-size: 0.7rem; padding: 3px 6px; border-radius: 4px; background: #e2e8f0; }
 
         .fab-btn {
-            position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px;
+            position: fixed; bottom: 15px; right: 15px; width: 55px; height: 55px;
             background-color: var(--success); color: white; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; font-size: 32px;
-            font-weight: 300; text-decoration: none; box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+            display: flex; justify-content: center; align-items: center; font-size: 28px;
+            font-weight: 300; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.25);
             z-index: 1000; transition: transform 0.2s, background-color 0.2s;
         }
         .fab-btn:hover { transform: scale(1.08); background-color: #059669; }
@@ -81,7 +81,7 @@
                 <h1>Dashboard</h1>
                 <div id="status" class="status-badge">Gegevens ophalen...</div>
             </div>
-            <div class="filter-row" style="margin-bottom: 15px;">
+            <div class="filter-row" style="margin-bottom: 12px;">
                 <select id="jaarSelect" class="filter-select"></select>
             </div>
         </header>
@@ -93,14 +93,14 @@
         </div>
 
         <div id="view-dashboard">
-            <section class="card" style="padding: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h3 style="margin: 0; color: var(--primary); font-size: 1rem;">🎯 Spaardoel (1 jun - 1 aug)</h3>
-                    <span style="font-weight: 700; color: #64748b; font-size: 0.85rem;">€ 2.000,00</span>
+            <section class="card" style="padding: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h3 style="margin: 0; color: var(--primary); font-size: 0.9rem;">🎯 Spaardoel (1 jun - 1 aug)</h3>
+                    <span style="font-weight: 700; color: #64748b; font-size: 0.8rem;">€ 2.000,00</span>
                 </div>
-                <div style="width: 100%; background-color: #e2e8f0; border-radius: 8px; height: 24px; overflow: hidden; position: relative;">
+                <div style="width: 100%; background-color: #e2e8f0; border-radius: 6px; height: 20px; overflow: hidden; position: relative;">
                     <div id="spaardoelBar" style="width: 0%; background-color: var(--success); height: 100%; transition: width 0.8s ease;"></div>
-                    <span id="spaardoelTekst" style="position: absolute; top: 0; left: 0; width: 100%; text-align: center; font-size: 0.85rem; font-weight: 700; color: #1e293b; line-height: 24px;">€ 0,00</span>
+                    <span id="spaardoelTekst" style="position: absolute; top: 0; left: 0; width: 100%; text-align: center; font-size: 0.8rem; font-weight: 700; color: #1e293b; line-height: 20px;">€ 0,00</span>
                 </div>
             </section>
 
@@ -125,48 +125,48 @@
 
             <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
                 <section class="card" style="background: #f8fafc;">
-                    <h3 style="margin-top: 0; color: var(--primary);">💡 Slimme Inzichten <span style="font-size: 0.75rem; color: #64748b; font-weight: normal;">(Huidige maand)</span></h3>
-                    <div id="inzichtenBody" style="font-size: 0.9rem;"></div>
+                    <h3 style="margin-top: 0; margin-bottom: 8px; color: var(--primary); font-size: 0.95rem;">💡 Slimme Inzichten <span style="font-size: 0.7rem; color: #64748b; font-weight: normal;">(Huidige maand)</span></h3>
+                    <div id="inzichtenBody" style="font-size: 0.85rem;"></div>
                 </section>
                 <section class="card">
-                    <h3 style="margin-top: 0;">Jaar-op-Jaar (Uitgaven)</h3>
-                    <div class="chart-container" style="height: 180px;"><canvas id="yoyGrafiek"></canvas></div>
+                    <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 0.95rem;">Jaar-op-Jaar (Uitgaven)</h3>
+                    <div class="chart-container" style="height: 160px;"><canvas id="yoyGrafiek"></canvas></div>
                 </section>
             </div>
             
             <div class="content-grid">
                 <section class="card">
-                    <h3 style="margin-top: 0;">Evolutie Netto Balans</h3>
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Evolutie Netto Balans</h3>
                     <div class="chart-container"><canvas id="balansGrafiek"></canvas></div>
                 </section>
             </div>
 
             <div class="content-grid">
                 <section class="card">
-                    <h3 style="margin-top: 0;">In vs Uit</h3>
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">In vs Uit</h3>
                     <div class="chart-container"><canvas id="maandGrafiek"></canvas></div>
                 </section>
                 <section class="card">
-                    <h3 style="margin-top: 0;">Verdeling</h3>
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Verdeling</h3>
                     <div class="chart-container"><canvas id="categorieGrafiek"></canvas></div>
                 </section>
             </div>
             
             <div class="trend-grid">
                 <section class="card">
-                    <h3 style="margin-top:0; font-size:1rem; color:#059669; display:flex; justify-content:space-between;">
+                    <h3 style="margin-top:0; margin-bottom: 8px; font-size:0.95rem; color:#059669; display:flex; justify-content:space-between;">
                         <span>🛒 Supermarkt</span> <span id="ytd-Supermarkt">€ 0,00</span>
                     </h3>
                     <div class="trend-container"><canvas id="trendSupermarkt"></canvas></div>
                 </section>
                 <section class="card">
-                    <h3 style="margin-top:0; font-size:1rem; color:#eab308; display:flex; justify-content:space-between;">
+                    <h3 style="margin-top:0; margin-bottom: 8px; font-size:0.95rem; color:#eab308; display:flex; justify-content:space-between;">
                         <span>🍟 Frietjes</span> <span id="ytd-Frietjes">€ 0,00</span>
                     </h3>
                     <div class="trend-container"><canvas id="trendFrietjes"></canvas></div>
                 </section>
                 <section class="card">
-                    <h3 style="margin-top:0; font-size:1rem; color:#3b82f6; display:flex; justify-content:space-between;">
+                    <h3 style="margin-top:0; margin-bottom: 8px; font-size:0.95rem; color:#3b82f6; display:flex; justify-content:space-between;">
                         <span>📦 Online</span> <span id="ytd-Online">€ 0,00</span>
                     </h3>
                     <div class="trend-container"><canvas id="trendOnline"></canvas></div>
@@ -175,7 +175,7 @@
 
             <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
                 <section class="card">
-                    <h3 style="margin-top: 0;">Uitgaven Analyse</h3>
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Uitgaven Analyse</h3>
                     <div class="tabel-wrapper">
                         <table id="drillDownTable">
                             <thead><tr><th>Groep / Sub-categorie</th><th style="text-align: right;">Totaal</th></tr></thead>
@@ -185,7 +185,7 @@
                 </section>
                 
                 <section class="card">
-                    <h3 style="margin-top: 0;">Top 5 Winkels (Variabel)</h3>
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Top 5 Winkels (Variabel)</h3>
                     <div class="tabel-wrapper">
                         <table id="top5Table">
                             <thead><tr><th>Winkel</th><th style="text-align: right; width: 35%;">Bedrag</th></tr></thead>
@@ -195,7 +195,7 @@
                 </section>
 
                 <section class="card">
-                    <h3 style="margin-top: 0;">Trend per Maand</h3>
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Trend per Maand</h3>
                     <div class="tabel-wrapper">
                         <table>
                             <thead><tr><th>Maand</th><th>In</th><th>Uit</th><th>Balans</th></tr></thead>
@@ -206,14 +206,14 @@
             </div>
 
             <section class="card">
-                <h3 style="margin-top: 0;">Banktransacties</h3>
-                <div class="filter-row" style="background: #f8fafc; padding: 10px; border-radius: 8px;">
+                <h3 style="margin-top: 0; font-size: 0.95rem;">Banktransacties</h3>
+                <div class="filter-row" style="background: #f8fafc; padding: 8px; border-radius: 8px;">
                     <select id="filterMaand" class="filter-select"></select>
                     <select id="filterHoofdgroep" class="filter-select"></select>
                     <select id="filterCategorie" class="filter-select"></select>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                        <select id="sorteerSelect" class="filter-select" style="width: 50%;"><option value="datum">Nieuwste</option><option value="uitgaven">Grootste</option></select>
-                        <label style="font-size: 0.85rem; color: #d35400; font-weight: 700;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                        <select id="sorteerSelect" class="filter-select" style="width: 48%;"><option value="datum">Nieuwste</option><option value="uitgaven">Grootste</option></select>
+                        <label style="font-size: 0.8rem; color: #d35400; font-weight: 700;">
                             <input type="checkbox" id="toonEnkelOverig"> Enkel "Overig"
                         </label>
                     </div>
@@ -244,7 +244,7 @@
                 </div>
             </section>
             <section class="card">
-                <h3 style="margin-top: 0;">Transacties deze week</h3>
+                <h3 style="margin-top: 0; font-size: 0.95rem;">Transacties deze week</h3>
                 <div class="tabel-wrapper">
                     <table>
                         <thead><tr><th>Datum</th><th>Winkel</th><th style="width: 30%;">Bedrag</th></tr></thead>
@@ -255,54 +255,61 @@
         </div>
 
         <div id="view-supermarkt" style="display: none;">
-            <div class="filter-row" style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
+            <div class="filter-row" style="background: #f8fafc; padding: 8px; border-radius: 8px; margin-bottom: 12px;">
                 <select id="supFilterMaand" class="filter-select"></select>
             </div>
 
             <section class="dashboard-grid">
                 <div class="card totaal-card">
                     <h3>Dagen Gewinkeld</h3>
-                    <p id="supAantalDagen" class="bedrag neutraal" style="font-size: 1.5rem;">0</p>
+                    <p id="supAantalDagen" class="bedrag neutraal" style="font-size: 1.4rem;">0</p>
                 </div>
                 <div class="card totaal-card">
                     <h3>% van de tijd</h3>
-                    <p id="supPercentage" class="bedrag neutraal" style="font-size: 1.5rem; color: #d97706;">0%</p>
+                    <p id="supPercentage" class="bedrag neutraal" style="font-size: 1.4rem; color: #d97706;">0%</p>
                 </div>
                 <div class="card totaal-card" style="grid-column: span 2;">
                     <h3>Totaal Uitgegeven</h3>
-                    <p id="supTotaal" class="bedrag negatief" style="font-size: 1.5rem;">€ 0,00</p>
+                    <p id="supTotaal" class="bedrag negatief" style="font-size: 1.4rem;">€ 0,00</p>
                 </div>
             </section>
 
-            <!-- NIEUW: BEZOEKEN PER DAG -->
             <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
                 <section class="card">
-                    <h3 style="margin-top: 0;">Bezoeken per dag</h3>
-                    <div style="display: flex; justify-content: space-around; text-align: center; margin-top: 25px;">
-                        <div>
-                            <h4 style="margin: 0; color: #64748b; font-size: 0.85rem;">1 Winkel</h4>
-                            <p id="sup1Keer" style="font-size: 1.6rem; font-weight: 800; color: var(--primary); margin: 8px 0;">0x</p>
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Bezoeken per dag</h3>
+                    <div style="display: flex; justify-content: space-around; flex-wrap: wrap; text-align: center; margin-top: 15px; gap: 8px;">
+                        <div style="flex: 1; min-width: 15%;">
+                            <h4 style="margin: 0; color: #64748b; font-size: 0.7rem; text-transform: uppercase;">1x</h4>
+                            <p id="sup1Keer" style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 4px 0;">0</p>
                         </div>
-                        <div>
-                            <h4 style="margin: 0; color: #64748b; font-size: 0.85rem;">2 Winkels</h4>
-                            <p id="sup2Keer" style="font-size: 1.6rem; font-weight: 800; color: var(--primary); margin: 8px 0;">0x</p>
+                        <div style="flex: 1; min-width: 15%;">
+                            <h4 style="margin: 0; color: #64748b; font-size: 0.7rem; text-transform: uppercase;">2x</h4>
+                            <p id="sup2Keer" style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 4px 0;">0</p>
                         </div>
-                        <div>
-                            <h4 style="margin: 0; color: #64748b; font-size: 0.85rem;">3+ Winkels</h4>
-                            <p id="sup3Keer" style="font-size: 1.6rem; font-weight: 800; color: var(--primary); margin: 8px 0;">0x</p>
+                        <div style="flex: 1; min-width: 15%;">
+                            <h4 style="margin: 0; color: #64748b; font-size: 0.7rem; text-transform: uppercase;">3x</h4>
+                            <p id="sup3Keer" style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 4px 0;">0</p>
+                        </div>
+                        <div style="flex: 1; min-width: 15%;">
+                            <h4 style="margin: 0; color: #64748b; font-size: 0.7rem; text-transform: uppercase;">4x</h4>
+                            <p id="sup4Keer" style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 4px 0;">0</p>
+                        </div>
+                        <div style="flex: 1; min-width: 15%;">
+                            <h4 style="margin: 0; color: #64748b; font-size: 0.7rem; text-transform: uppercase;">5+</h4>
+                            <p id="sup5Keer" style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 4px 0;">0</p>
                         </div>
                     </div>
                 </section>
 
                 <section class="card">
-                    <h3 style="margin-top: 0;">Winkelfrequentie (% dagen)</h3>
-                    <div class="chart-container" style="height: 120px;"><canvas id="supPercGrafiek"></canvas></div>
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Winkelfrequentie (% dagen)</h3>
+                    <div class="chart-container" style="height: 180px;"><canvas id="supPercGrafiek"></canvas></div>
                 </section>
             </div>
 
             <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
                 <section class="card">
-                    <h3 style="margin-top: 0;">Uitgaven per Winkel</h3>
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Uitgaven per Winkel</h3>
                     <div class="tabel-wrapper">
                         <table>
                             <thead><tr><th>Winkel</th><th style="text-align: right; width: 35%;">Bedrag</th></tr></thead>
@@ -312,7 +319,7 @@
                 </section>
 
                 <section class="card">
-                    <h3 style="margin-top: 0;">Alle Transacties</h3>
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Alle Transacties</h3>
                     <div class="tabel-wrapper">
                         <table>
                             <thead><tr><th>Datum</th><th>Winkel</th><th style="width: 30%;">Bedrag</th></tr></thead>

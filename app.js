@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Mobiele Weergave Gefixt & Categorieën Geüpdatet)
+// app.js - Financiële Dashboard (Foodcompany fix, 180 limiet & Spaardoel vanaf 1 juni)
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 const budgetSheetUrl = ""; 
@@ -11,10 +11,10 @@ const KOLOM_DETAILS = "Details";
 const KOLOM_TYPE = "Type verrichting";
 
 const CATEGORIE_RULES = {
-    "Supermarkt": ["huwaert", "Dierendo", "ESN", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "Alvo", "FOOD FACTORY", "HELLOFRESH", "WIBRA", "FOODCOMPANY"],
+    "Supermarkt": ["huwaert", "Dierendo", "ESN", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "Alvo", "FOOD FACTORY", "HELLOFRESH", "WIBRA"],
     "Creche": ["disneyland", "kinderopvang", "creche"],
     "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"],
-    "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG"],
+    "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG", "FOODCOMPANY", "The Foodcompany"],
     "Restaurant": ["restaurant", "brasserie", "JANE'S", "bistro", "pizzeria", "PIAZZA", "WOLF BRUXELLES", "DIMATTO", "FRAMILIE", "BUYSSE MOBIELE", "LUYCKX GIANNI"], 
     "Bouwmarkt": ["Gamma", "Brico", "FLORALUX", "TUINCENTRUM", "HORTA", "ERICA", "VANNEROM"],
     "Dreamland": ["Dreamland"],
@@ -256,7 +256,11 @@ function updateWeekbudgetUI() {
         }
     });
     
-    document.getElementById('weekUitgegevenTonen').innerText = formatBedrag(totaalUitgegeven);
+    let uitgavenKleur = totaalUitgegeven < 180 ? 'bedrag positief' : 'bedrag negatief';
+    let tonenEl = document.getElementById('weekUitgegevenTonen');
+    tonenEl.innerText = formatBedrag(totaalUitgegeven);
+    tonenEl.className = uitgavenKleur;
+
     document.getElementById('maandUitgegevenTonen').innerText = formatBedrag(totaalMaandUitgegeven);
     gecombineerdeLijst.sort((a, b) => b.datumObj - a.datumObj); 
     
@@ -295,11 +299,22 @@ function updateDashboard() {
 
 function verwerkData(data, huidigJaar) {
     let inkomsten = 0, uitgaven = 0, vast = 0;
+    let spaarBalansVanafJuni = 0; 
+    let actueelJaar = parseInt(huidigJaar);
+    let startDatumSpaardoel = new Date(actueelJaar, 5, 1); // 1 juni is index 5
+
     const maanden = {}, cats = {}, groepen = {}, hgBreakdown = {};
     
     data.forEach(r => {
         let b = typeof r[KOLOM_BEDRAG] === 'string' ? parseFloat(r[KOLOM_BEDRAG].replace(',','.')) : r[KOLOM_BEDRAG];
         if (isNaN(b)) return;
+
+        const d = parseDatumToDate(r[KOLOM_DATUM]);
+        // Telt enkel mee voor het spaardoel als de datum op of na 1 juni valt
+        if (d && d.getTime() >= startDatumSpaardoel.getTime()) {
+            spaarBalansVanafJuni += b;
+        }
+
         const cat = bepaalCategorie(r), hg = bepaalHoofdgroep(cat), dParts = String(r[KOLOM_DATUM]).split(/[-/]/);
         let m = (dParts.length >= 3) ? (dParts[0].length === 4 ? `${dParts[0]}-${dParts[1]}` : `${dParts[2]}-${dParts[1]}`) : "Onbekend";
         if (!maanden[m]) maanden[m] = { in: 0, uit: 0 };
@@ -322,8 +337,9 @@ function verwerkData(data, huidigJaar) {
     document.getElementById('jaarBalans').innerText = (balans < 0 ? "- " : "") + formatBedrag(balans);
     document.getElementById('vastTotaal').innerText = formatBedrag(vast);
     
+    // Spaardoel Update met de gefilterde balans
     const spaarDoel = 2000;
-    let percentage = (balans / spaarDoel) * 100;
+    let percentage = (spaarBalansVanafJuni / spaarDoel) * 100;
     if (percentage < 0) percentage = 0;
     if (percentage > 100) percentage = 100;
     
@@ -331,8 +347,8 @@ function verwerkData(data, huidigJaar) {
     const tekst = document.getElementById('spaardoelTekst');
     if (bar && tekst) {
         bar.style.width = percentage + '%';
-        tekst.innerText = formatBedrag(balans);
-        if (balans >= spaarDoel) { bar.style.backgroundColor = '#059669'; } 
+        tekst.innerText = formatBedrag(spaarBalansVanafJuni);
+        if (spaarBalansVanafJuni >= spaarDoel) { bar.style.backgroundColor = '#059669'; } 
         else { bar.style.backgroundColor = '#10b981'; }
     }
     

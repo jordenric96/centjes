@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Alvo toevoeging, Spaardoel, Strakke mobiele lay-out)
+// app.js - Financiële Dashboard (Mobiele Weergave Gefixt & Categorieën Geüpdatet)
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 const budgetSheetUrl = ""; 
@@ -261,7 +261,7 @@ function updateWeekbudgetUI() {
     gecombineerdeLijst.sort((a, b) => b.datumObj - a.datumObj); 
     
     let tbody = document.getElementById('weekTransactiesBody');
-    tbody.innerHTML = gecombineerdeLijst.length === 0 ? '<tr><td colspan="3" style="text-align:center; padding: 20px;">Geen transacties.</td></tr>' : gecombineerdeLijst.map(item => `<tr><td><strong>${item.datumStr}</strong></td><td><div style="max-width: 450px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.naam}">${item.naam}</div></td><td class="tekst-negatief"><strong>${formatBedrag(item.bedrag)}</strong></td></tr>`).join('');
+    tbody.innerHTML = gecombineerdeLijst.length === 0 ? '<tr><td colspan="3" style="text-align:center; padding: 20px;">Geen transacties.</td></tr>' : gecombineerdeLijst.map(item => `<tr><td><strong>${item.datumStr}</strong></td><td><div class="omschrijving-cel" title="${item.naam}">${item.naam}</div></td><td class="tekst-negatief"><strong>${formatBedrag(item.bedrag)}</strong></td></tr>`).join('');
 }
 
 function updateDashboard() {
@@ -322,7 +322,6 @@ function verwerkData(data, huidigJaar) {
     document.getElementById('jaarBalans').innerText = (balans < 0 ? "- " : "") + formatBedrag(balans);
     document.getElementById('vastTotaal').innerText = formatBedrag(vast);
     
-    // Spaardoel Logica Update
     const spaarDoel = 2000;
     let percentage = (balans / spaarDoel) * 100;
     if (percentage < 0) percentage = 0;
@@ -456,5 +455,5 @@ function bouwTrendGrafieken() {
 function bouwTransactieTabel(data) {
     if(data.length === 0) { document.getElementById('tableHead').innerHTML = ''; document.getElementById('tableBody').innerHTML = '<tr><td style="padding: 20px; text-align: center;">Geen transacties.</td></tr>'; return; }
     document.getElementById('tableHead').innerHTML = `<tr><th>Datum</th><th>Omschrijving</th><th>Bedrag</th><th>Groep</th><th>Cat</th></tr>`;
-    document.getElementById('tableBody').innerHTML = data.slice(0, 150).map(rij => `<tr><td>${rij[KOLOM_DATUM]}</td><td><div style="max-width: 350px; overflow:hidden; text-overflow:ellipsis;">${schoonNaamOp(rij)}</div></td><td><span class="${rij[KOLOM_BEDRAG]>0?'tekst-positief':'tekst-negatief'}"><strong>${formatBedrag(rij[KOLOM_BEDRAG])}</strong></span></td><td>${bepaalHoofdgroep(bepaalCategorie(rij))}</td><td>${bepaalCategorie(rij)}</td></tr>`).join('');
+    document.getElementById('tableBody').innerHTML = data.slice(0, 150).map(rij => `<tr><td>${rij[KOLOM_DATUM]}</td><td><div class="omschrijving-cel" title="${schoonNaamOp(rij)}">${schoonNaamOp(rij)}</div></td><td><span class="${rij[KOLOM_BEDRAG]>0?'tekst-positief':'tekst-negatief'}"><strong>${formatBedrag(rij[KOLOM_BEDRAG])}</strong></span></td><td>${bepaalHoofdgroep(bepaalCategorie(rij))}</td><td>${bepaalCategorie(rij)}</td></tr>`).join('');
 }

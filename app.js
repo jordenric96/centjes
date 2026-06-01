@@ -1,12 +1,10 @@
-// app.js - Financiële Dashboard (Top 5 & Nieuwe Supermarkt Link)
+// app.js - Financiële Dashboard (Top 5 gefixt: Sparen & Intern uitgesloten)
 
-// De links naar jouw aparte tabbladen:
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1758541093&single=true&output=csv"
 ];
 
-// JOUW NIEUWE LINK VOOR DE KASSATICKETS:
 const supermarktSheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1934138929&single=true&output=csv"; 
 
 const KOLOM_DATUM = "Uitvoeringsdatum"; 
@@ -54,7 +52,10 @@ const CATEGORIE_RULES = {
     "Internet & Telecom": ["internet", "telenet", "proximus", "orange", "base"],
     "Loon": ["loon", "salaris", "wedde", "bezoldiging"],
     "Kinderbijslag": ["groeipakket", "kinderbijslag", "fons", "infino", "kidslife", "parentia", "myfamily"],
-    "Terugbetaling": ["terugbetaling", "mutualiteit", "cm", "solidaris", "helAN"]
+    "Terugbetaling": ["terugbetaling", "mutualiteit", "cm", "solidaris", "helAN"],
+    
+    // --- Nieuw: Sparen & Interne Overschrijvingen ---
+    "Sparen & Intern": ["ricour-de bruyn", "ricour noe", "spaarrekening"]
 };
 
 const HOOFD_GROEPEN = {
@@ -67,7 +68,7 @@ const HOOFD_GROEPEN = {
     "Lou & Noé": ["Creche", "Dreamland"],
     "Auto": ["Tanken", "Auto (Kosten & Taks)"],
     "Shoppen & Kleding": ["Kleren", "Online"],
-    "Bank & Geldzaken": ["Visa", "Geldafhaling"],
+    "Bank & Geldzaken": ["Visa", "Geldafhaling", "Sparen & Intern"], // Toegevoegd aan Bank
     "Inkomsten": ["Loon", "Kinderbijslag", "Terugbetaling"]
 };
 
@@ -158,7 +159,6 @@ function parseDatumToDate(datumStr) {
     if (!datumStr) return null;
     const parts = String(datumStr).split(/[-/]/);
     if (parts.length === 3) {
-        // Formulier-data (Tijdstempel) kan soms tijd bevatten, bijv "1/6/2026 14:00"
         let part0 = parts[0].split(' ')[0]; 
         let y = part0.length === 4 ? part0 : parts[2].split(' ')[0];
         let d = part0.length === 4 ? parts[2].split(' ')[0] : part0;
@@ -251,6 +251,10 @@ function schoonNaamOp(rij) {
     let t = parts.join(" ");
 
     let tl = t.toLowerCase();
+    
+    // --- NIEUW: Schone namen voor sparen ---
+    if (tl.includes("ricour-de bruyn") || tl.includes("ricour noe")) return "Sparen (Intern)";
+    
     if (tl.includes("okay")) return "Okay";
     if (tl.includes("kruidvat")) return "Kruidvat";
     if (tl.includes("schelck huwaert")) return "Delhaize";
@@ -420,11 +424,12 @@ function verwerkData(data, huidigJaar) {
         } else {
             uitgaven += b; maanden[m].uit += b;
             
+            // --- TOP 5 LOGICA (MET UITZONDERING VAN SPAREN) ---
             if (VASTE_CATEGORIEEN.includes(cat)) {
                 vast += Math.abs(b);
-            } else {
+            } else if (cat !== "Sparen & Intern") {
                 let winkelNaam = schoonNaamOp(r);
-                if (winkelNaam !== "Transactie (Geen details)") {
+                if (winkelNaam !== "Transactie (Geen details)" && winkelNaam !== "Sparen (Intern)") {
                     if (!top5Data[winkelNaam]) top5Data[winkelNaam] = 0;
                     top5Data[winkelNaam] += Math.abs(b);
                 }

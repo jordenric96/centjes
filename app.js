@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Klikbare Maanden voor Top 5)
+// app.js - Financiële Dashboard (Pro-Rata Inzichten & Frequentiegrafiek Supermarkt)
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -71,7 +71,7 @@ const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit
 
 let alleData = []; 
 let budgetData = []; 
-let mijnMaandGrafiek = null, mijnCatGrafiek = null, mijnBalansGrafiek = null, mijnYoYGrafiek = null;
+let mijnMaandGrafiek = null, mijnCatGrafiek = null, mijnBalansGrafiek = null, mijnYoYGrafiek = null, mijnSupPercGrafiek = null;
 
 let huidigDatum = new Date();
 let toonJaar = huidigDatum.getFullYear();
@@ -395,16 +395,75 @@ function updateWeekbudgetUI() {
     tbody.innerHTML = gecombineerdeLijst.length === 0 ? '<tr><td colspan="3" style="text-align:center; padding: 20px;">Geen transacties.</td></tr>' : gecombineerdeLijst.map(item => `<tr><td><strong>${item.datumStr}</strong></td><td><div class="omschrijving-cel" title="${item.naam}">${item.naam}</div></td><td class="tekst-negatief"><strong>${formatBedrag(item.bedrag)}</strong></td></tr>`).join('');
 }
 
+// NIEUW: TEKEN DE SUPERMARKT PERCENTAGE GRAFIEK
+function tekenSupPercGrafiek(gekozenJaar, supDataJaarGeheel) {
+    let mndUniekeDagen = Array(12).fill().map(() => new Set());
+    
+    supDataJaarGeheel.forEach(item => {
+        if (item.ruweMaand !== null && item.datumStr) {
+            mndUniekeDagen[item.ruweMaand].add(item.datumStr);
+        }
+    });
+
+    let percData = [];
+    let today = new Date();
+    let y = parseInt(gekozenJaar);
+
+    for (let i = 0; i < 12; i++) {
+        let count = mndUniekeDagen[i].size;
+        let daysInPeriod = new Date(y, i + 1, 0).getDate();
+
+        if (y === today.getFullYear() && i === today.getMonth()) {
+            daysInPeriod = today.getDate(); // Voor de huidige maand pakken we alleen de gepasseerde dagen
+        }
+
+        if (y > today.getFullYear() || (y === today.getFullYear() && i > today.getMonth())) {
+            percData.push(null); 
+        } else {
+            let p = (count / daysInPeriod) * 100;
+            percData.push(p > 100 ? 100 : p);
+        }
+    }
+
+    if (window.mijnSupPercGrafiek) window.mijnSupPercGrafiek.destroy();
+    const maandLabels = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+    
+    window.mijnSupPercGrafiek = new Chart(document.getElementById('supPercGrafiek').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: maandLabels,
+            datasets: [{
+                label: '% van de dagen gewinkeld',
+                data: percData,
+                backgroundColor: '#d97706',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { 
+                y: { 
+                    beginAtZero: true, 
+                    max: 100, 
+                    ticks: { callback: function(val) { return val + '%'; } } 
+                } 
+            },
+            plugins: { tooltip: { callbacks: { label: function(context) { return context.parsed.y.toFixed(1) + '%'; } } } }
+        }
+    });
+}
+
 function updateSupermarktDash() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
     const fMaand = document.getElementById('supFilterMaand').value; 
     
-    let supData = [];
+    let supDataGeheelJaar = [];
     alleData.forEach(rij => {
         if(haalJaar(haalWaarde(rij, KOLOM_DATUM)) === gekozenJaar && bepaalCategorie(rij) === 'Supermarkt') {
             let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
             if(b < 0) { 
-                supData.push({
+                supDataGeheelJaar.push({
                     datumObj: parseDatumToDate(haalWaarde(rij, KOLOM_DATUM)),
                     datumStr: haalWaarde(rij, KOLOM_DATUM).split(' ')[0],
                     bedrag: Math.abs(b),
@@ -422,11 +481,10 @@ function updateSupermarktDash() {
         let bedrag = parseBedragNumber(bStr);
         if(isNaN(bedrag)) return;
         let d = parseDatumToDate(String(dStr));
-        
         let winkel = schoonNaamOp(haalWaarde(rij, 'winkel') || 'Handmatige bon');
 
         if(d && String(d.getFullYear()) === gekozenJaar) {
-            supData.push({
+            supDataGeheelJaar.push({
                 datumObj: d,
                 datumStr: String(dStr).split(' ')[0],
                 bedrag: Math.abs(bedrag),
@@ -436,16 +494,20 @@ function updateSupermarktDash() {
         }
     });
 
+    // Teken de grafiek voordat we filteren op 1 specifieke maand
+    tekenSupPercGrafiek(gekozenJaar, supDataGeheelJaar);
+
+    let supDataFiltered = supDataGeheelJaar;
     if (fMaand !== "alle") {
         let m = parseInt(fMaand);
-        supData = supData.filter(item => item.ruweMaand === m);
+        supDataFiltered = supDataGeheelJaar.filter(item => item.ruweMaand === m);
     }
 
     let uniekeDagen = new Set();
     let totaalBedrag = 0;
     let perWinkel = {};
     
-    supData.forEach(item => {
+    supDataFiltered.forEach(item => {
         if(item.datumStr) uniekeDagen.add(item.datumStr);
         totaalBedrag += item.bedrag;
         
@@ -488,8 +550,8 @@ function updateSupermarktDash() {
     winkelArr.sort((a, b) => b.totaal - a.totaal);
     document.getElementById('supWinkelBody').innerHTML = winkelArr.length === 0 ? '<tr><td colspan="2" style="text-align:center; padding:15px;">Geen transacties</td></tr>' : winkelArr.map(w => `<tr><td><strong>${w.naam}</strong></td><td style="text-align:right;" class="tekst-negatief"><strong>${formatBedrag(w.totaal)}</strong></td></tr>`).join('');
 
-    supData.sort((a, b) => b.datumObj - a.datumObj);
-    document.getElementById('supTransactiesBody').innerHTML = supData.length === 0 ? '<tr><td colspan="3" style="text-align:center; padding:15px;">Geen transacties</td></tr>' : supData.map(t => `<tr><td>${t.datumStr}</td><td><div class="omschrijving-cel" title="${t.winkel}">${t.winkel}</div></td><td class="tekst-negatief"><strong>${formatBedrag(t.bedrag)}</strong></td></tr>`).join('');
+    supDataFiltered.sort((a, b) => b.datumObj - a.datumObj);
+    document.getElementById('supTransactiesBody').innerHTML = supDataFiltered.length === 0 ? '<tr><td colspan="3" style="text-align:center; padding:15px;">Geen transacties</td></tr>' : supDataFiltered.map(t => `<tr><td>${t.datumStr}</td><td><div class="omschrijving-cel" title="${t.winkel}">${t.winkel}</div></td><td class="tekst-negatief"><strong>${formatBedrag(t.bedrag)}</strong></td></tr>`).join('');
 }
 
 function updateDashboard() {
@@ -567,6 +629,7 @@ function bouwYoYGrafiek(gekozenJaar) {
     });
 }
 
+// UPDATE: PRO-RATA BEREKENING VOOR ECHTE INZICHTEN
 function bouwSlimmeInzichten() {
     let huidigeDatum = new Date();
     let dNu = new Date(huidigeDatum.getFullYear(), huidigeDatum.getMonth(), 1);
@@ -595,6 +658,11 @@ function bouwSlimmeInzichten() {
         }
     });
 
+    // Pacing factor: Hoeveel dagen zijn we ver in deze maand?
+    let dagenGepasseerd = huidigeDatum.getDate();
+    let dagenInHuidigeMaand = new Date(huidigeDatum.getFullYear(), huidigeDatum.getMonth() + 1, 0).getDate();
+    let pacingFactor = dagenGepasseerd / dagenInHuidigeMaand;
+
     let inzichten = [];
     let alleCats = new Set([...Object.keys(uitgavenNu), ...Object.keys(uitgavenOud)]);
 
@@ -602,10 +670,15 @@ function bouwSlimmeInzichten() {
         let nu = uitgavenNu[cat] || 0;
         let gemOud = (uitgavenOud[cat] || 0) / 6; 
         
-        if (gemOud > 10 || nu > 10) { 
-            let verschil = nu - gemOud;
-            let perc = gemOud > 0 ? (verschil / gemOud) * 100 : 100;
-            inzichten.push({ cat: cat, nu: nu, gemOud: gemOud, verschil: verschil, perc: perc });
+        // Wat we ongeveer verwacht hadden op deze dag in de maand
+        let verwachtTotNu = gemOud * pacingFactor; 
+        
+        // Zorg dat we niet waarschuwen voor een paar euro verschil
+        if (gemOud > 20 || nu > 20) { 
+            let verschil = nu - verwachtTotNu;
+            if (Math.abs(verschil) > 20) { 
+                inzichten.push({ cat: cat, nu: nu, verwacht: verwachtTotNu, gemOud: gemOud, verschil: verschil });
+            }
         }
     });
 
@@ -614,24 +687,30 @@ function bouwSlimmeInzichten() {
     let html = '';
     if (inzichten.length > 0) {
         let stijger = inzichten[0];
+        // Bij stijgers (meer dan verwacht) mag hij altijd waarschuwen, want geld is al weg
         if (stijger.verschil > 20) {
             html += `<div style="padding: 12px; background: #fee2e2; border-left: 4px solid #ef4444; border-radius: 6px; margin-bottom: 10px;">
                 <strong style="color: #b91c1c;">Let op: ${stijger.cat}</strong><br>
-                Je gaf deze maand <strong>${formatBedrag(stijger.nu)}</strong> uit. Dat is <strong>${formatBedrag(stijger.verschil)} méér</strong> dan je normale gemiddelde (${formatBedrag(stijger.gemOud)}).
+                Je gaf deze maand al <strong>${formatBedrag(stijger.nu)}</strong> uit. Normaal zit je rond dag ${dagenGepasseerd} pas op <strong>${formatBedrag(stijger.verwacht)}</strong>.
             </div>`;
         }
 
         let daler = inzichten[inzichten.length - 1];
-        if (daler.verschil < -20) {
+        // Voor dalers: je bent pas écht "goed bezig" als we al wat verder in de maand zijn. (Na 7 dagen)
+        if (daler.verschil < -20 && dagenGepasseerd > 7) {
             html += `<div style="padding: 12px; background: #d1fae5; border-left: 4px solid #10b981; border-radius: 6px;">
                 <strong style="color: #047857;">Goed bezig: ${daler.cat}</strong><br>
-                Je gaf deze maand nog maar <strong>${formatBedrag(daler.nu)}</strong> uit. Dat is <strong>${formatBedrag(Math.abs(daler.verschil))} mínder</strong> dan normaal (${formatBedrag(daler.gemOud)}).
+                Normaal geef je tegen dag ${dagenGepasseerd} zo'n <strong>${formatBedrag(daler.verwacht)}</strong> uit, nu zit je nog maar op <strong>${formatBedrag(daler.nu)}</strong>.
             </div>`;
         }
     }
 
     if (html === '') {
-        html = '<p style="color: #64748b; font-style: italic;">Je uitgavenpatroon loopt momenteel mooi gelijk met je gemiddelde. Er zijn nog geen grote uitschieters deze maand!</p>';
+        if (dagenGepasseerd <= 7) {
+            html = '<p style="color: #64748b; font-style: italic;">De maand is nog te vers voor echte inzichten. Vanaf dag 7 krijg je hier tips.</p>';
+        } else {
+            html = '<p style="color: #64748b; font-style: italic;">Je uitgavenpatroon loopt momenteel keurig gelijk met wat verwacht is!</p>';
+        }
     }
     
     document.getElementById('inzichtenBody').innerHTML = html;
@@ -644,8 +723,6 @@ function verwerkData(data, huidigJaar) {
 
     const maanden = {}, cats = {}, groepen = {}, hgBreakdown = {};
     const top5Data = {}; 
-    
-    // NIEUW: We slaan hier ook de uitgaven per maand/winkel op voor de maand-accordion
     const maandTop5Data = {}; 
 
     data.forEach(r => {
@@ -681,11 +758,9 @@ function verwerkData(data, huidigJaar) {
                 } else {
                     let winkelNaam = schoonNaamOp(null, r);
                     if (winkelNaam !== "Transactie (Geen details)") {
-                        // Telt op voor de hoofd Top 5 (volledig jaar)
                         if (!top5Data[winkelNaam]) top5Data[winkelNaam] = 0;
                         top5Data[winkelNaam] += Math.abs(b);
                         
-                        // Telt op voor de specifieke maand Top 5
                         if (!maandTop5Data[m]) maandTop5Data[m] = {};
                         if (!maandTop5Data[m][winkelNaam]) maandTop5Data[m][winkelNaam] = 0;
                         maandTop5Data[m][winkelNaam] += Math.abs(b);
@@ -716,7 +791,6 @@ function verwerkData(data, huidigJaar) {
         if (spaarBalansVanafJuni >= spaarDoel) bar.style.backgroundColor = '#059669'; else bar.style.backgroundColor = '#10b981';
     }
     
-    // MAAND TABEL GENEREREN (MET ACCORDION)
     const maandContainer = document.getElementById('maandBody');
     maandContainer.innerHTML = '';
     const gesorteerdeMaanden = Object.keys(maanden).sort().reverse();
@@ -728,7 +802,6 @@ function verwerkData(data, huidigJaar) {
         let mNaam = new Date(tmpD[0], parseInt(tmpD[1])-1, 1).toLocaleString('nl-BE', { month: 'short' });
         mNaam = mNaam.charAt(0).toUpperCase() + mNaam.slice(1) + ' ' + tmpD[0];
 
-        // Hoofdrij (De maand zelf)
         const trHoofd = document.createElement('tr');
         trHoofd.style.cursor = 'pointer';
         trHoofd.style.backgroundColor = '#ffffff';
@@ -739,7 +812,6 @@ function verwerkData(data, huidigJaar) {
             <td class="tekst-negatief">${formatBedrag(md.uit)}</td>
             <td class="${mBalans >= 0 ? "tekst-positief" : "tekst-negatief"}"><strong>${formatBedrag(mBalans)}</strong></td>`;
 
-        // Subrij (De verborgen Top 5 tabel)
         const trSub = document.createElement('tr');
         trSub.style.display = 'none';
         trSub.className = 'mnd-sub-row';
@@ -748,7 +820,7 @@ function verwerkData(data, huidigJaar) {
         if (maandTop5Data[mnd]) {
             let items = Object.keys(maandTop5Data[mnd]).map(k => ({naam: k, bedrag: maandTop5Data[mnd][k]}));
             items.sort((a,b) => b.bedrag - a.bedrag);
-            let top5Items = items.slice(0,5); // Alleen de 5 grootste pakken
+            let top5Items = items.slice(0,5); 
             
             if(top5Items.length > 0) {
                 top5Html = `
@@ -766,18 +838,15 @@ function verwerkData(data, huidigJaar) {
         maandContainer.appendChild(trHoofd);
         maandContainer.appendChild(trSub);
 
-        // Klik-actie om open/dicht te klappen
         trHoofd.onclick = () => {
             const isExpanded = trSub.style.display === 'table-row';
             
-            // Sluit eerst alle andere maanden af
             document.querySelectorAll('.mnd-row').forEach(r => {
                 r.style.backgroundColor = '#ffffff';
                 r.querySelector('.pijl-mnd').style.transform = 'rotate(0deg)';
             });
             document.querySelectorAll('.mnd-sub-row').forEach(r => r.style.display = 'none');
 
-            // Klap de geklikte open als hij nog dicht was
             if (!isExpanded) {
                 trSub.style.display = 'table-row';
                 trHoofd.style.backgroundColor = '#f1f5f9';

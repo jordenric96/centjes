@@ -21,7 +21,9 @@
         .hoofd-container { width: 100%; max-width: 100vw; padding: 10px; overflow-x: hidden; }
         .card { width: 100%; min-width: 0; max-width: 100%; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 15px; margin-bottom: 20px; overflow: hidden; }
         
-        .dashboard-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); width: 100%; min-width: 0; margin-bottom: 20px; }
+        /* AANGEPAST: Altijd 2 blokken naast elkaar voor meer ruimte */
+        .dashboard-grid { display: grid; gap: 10px; grid-template-columns: repeat(2, 1fr); width: 100%; min-width: 0; margin-bottom: 20px; }
+        
         .content-grid { display: grid; gap: 15px; grid-template-columns: 1fr; width: 100%; min-width: 0; margin-bottom: 20px; }
         .trend-grid { display: grid; gap: 15px; grid-template-columns: 1fr; width: 100%; min-width: 0; margin-bottom: 20px; }
         
@@ -100,26 +102,26 @@
                 </div>
                 <div style="width: 100%; background-color: #e2e8f0; border-radius: 8px; height: 24px; overflow: hidden; position: relative;">
                     <div id="spaardoelBar" style="width: 0%; background-color: var(--success); height: 100%; transition: width 0.8s ease;"></div>
-                    <span id="spaardoelTekst" style="position: absolute; top: 0; left: 0; width: 100%; text-align: center; font-size: 0.85rem; font-weight: 700; color: #1e293b; line-height: 24px;">€ 0.00</span>
+                    <span id="spaardoelTekst" style="position: absolute; top: 0; left: 0; width: 100%; text-align: center; font-size: 0.85rem; font-weight: 700; color: #1e293b; line-height: 24px;">€ 0,00</span>
                 </div>
             </section>
 
             <section class="dashboard-grid">
                 <div class="card totaal-card">
                     <h3>Inkomsten</h3>
-                    <p id="jaarInkomsten" class="bedrag positief">€ 0.00</p>
+                    <p id="jaarInkomsten" class="bedrag positief">€ 0,00</p>
                 </div>
                 <div class="card totaal-card">
                     <h3>Uitgaven</h3>
-                    <p id="jaarUitgaven" class="bedrag negatief">€ 0.00</p>
+                    <p id="jaarUitgaven" class="bedrag negatief">€ 0,00</p>
                 </div>
                 <div class="card totaal-card">
                     <h3>Netto Balans</h3>
-                    <p id="jaarBalans" class="bedrag neutraal">€ 0.00</p>
+                    <p id="jaarBalans" class="bedrag neutraal">€ 0,00</p>
                 </div>
                 <div class="card totaal-card" style="background-color: #fafafa;">
                     <h3>Vaste Kosten</h3>
-                    <p id="vastTotaal" class="bedrag negatief">€ 0.00</p>
+                    <p id="vastTotaal" class="bedrag negatief">€ 0,00</p>
                 </div>
             </section>
 
@@ -155,19 +157,19 @@
             <div class="trend-grid">
                 <section class="card">
                     <h3 style="margin-top:0; font-size:1rem; color:#059669; display:flex; justify-content:space-between;">
-                        <span>🛒 Supermarkt</span> <span id="ytd-Supermarkt">€ 0.00</span>
+                        <span>🛒 Supermarkt</span> <span id="ytd-Supermarkt">€ 0,00</span>
                     </h3>
                     <div class="trend-container"><canvas id="trendSupermarkt"></canvas></div>
                 </section>
                 <section class="card">
                     <h3 style="margin-top:0; font-size:1rem; color:#eab308; display:flex; justify-content:space-between;">
-                        <span>🍟 Frietjes</span> <span id="ytd-Frietjes">€ 0.00</span>
+                        <span>🍟 Frietjes</span> <span id="ytd-Frietjes">€ 0,00</span>
                     </h3>
                     <div class="trend-container"><canvas id="trendFrietjes"></canvas></div>
                 </section>
                 <section class="card">
                     <h3 style="margin-top:0; font-size:1rem; color:#3b82f6; display:flex; justify-content:space-between;">
-                        <span>📦 Online</span> <span id="ytd-Online">€ 0.00</span>
+                        <span>📦 Online</span> <span id="ytd-Online">€ 0,00</span>
                     </h3>
                     <div class="trend-container"><canvas id="trendOnline"></canvas></div>
                 </section>
@@ -236,11 +238,11 @@
             <section class="dashboard-grid">
                 <div class="card totaal-card">
                     <h3 style="color: #64748b;">Werkelijk Uitgegeven (Week)</h3>
-                    <p id="weekUitgegevenTonen" class="bedrag positief">€ 0.00</p>
+                    <p id="weekUitgegevenTonen" class="bedrag positief">€ 0,00</p>
                 </div>
                 <div class="card totaal-card" style="background-color: #eff6ff;">
                     <h3 style="color: #1e3a8a;" id="maandTitel">Totaal (Maand)</h3>
-                    <p id="maandUitgegevenTonen" class="bedrag negatief">€ 0.00</p>
+                    <p id="maandUitgegevenTonen" class="bedrag negatief">€ 0,00</p>
                 </div>
             </section>
             <section class="card">
@@ -268,9 +270,9 @@
                     <h3>% van de tijd</h3>
                     <p id="supPercentage" class="bedrag neutraal" style="font-size: 1.5rem; color: #d97706;">0%</p>
                 </div>
-                <div class="card totaal-card">
+                <div class="card totaal-card" style="grid-column: span 2;">
                     <h3>Totaal Uitgegeven</h3>
-                    <p id="supTotaal" class="bedrag negatief" style="font-size: 1.5rem;">€ 0.00</p>
+                    <p id="supTotaal" class="bedrag negatief" style="font-size: 1.5rem;">€ 0,00</p>
                 </div>
             </section>
 

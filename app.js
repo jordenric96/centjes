@@ -1,4 +1,4 @@
-// app.js - Financieel Dashboard - Volledig en Compleet (Uitlijning Bedragen Gefixt)
+// app.js - Financieel Dashboard - Volledig en Compleet
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -231,13 +231,10 @@ function bepaalHoofdgroep(sub) {
     return "Overig";
 }
 
-// FORMATTIE FIX: Plakt het minteken netjes direct achter het euro-teken (€ -10,00)
-function formatBedrag(g, forceDeduct = false) { 
+// AANGEPAST: Verwijdert altijd elke vorm van een minteken
+function formatBedrag(g) { 
     if (isNaN(g) || g === null) return "€ 0,00";
-    let isNegatief = g < 0 || forceDeduct;
-    let absoluteWaarde = Math.abs(g);
-    let geformatteerdGetal = absoluteWaarde.toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return isNegatief ? "€ -" + geformatteerdGetal : "€ " + geformatteerdGetal; 
+    return "€ " + Math.abs(g).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
 }
 
 function schoonNaamOp(naamInput, rij = null) {
@@ -258,7 +255,7 @@ function schoonNaamOp(naamInput, rij = null) {
     let tl = t.toLowerCase();
     
     if (tl.includes("ricour-de bruyn") || tl.includes("ricour noe")) return "Sparen (Intern)";
-    if (tl.includes("disneyland")) return "Disneyland Kinderopvang";
+    if (tl.includes("disneyland") || tl.includes("kinderopvang")) return "Disneyland Kinderopvang";
     if (tl.includes("schelck") || tl.includes("huwaert") || tl.includes("delhaize")) return "Delhaize";
     if (tl.includes("okay")) return "Okay";
     if (tl.includes("kruidvat")) return "Kruidvat";
@@ -275,35 +272,74 @@ function schoonNaamOp(naamInput, rij = null) {
     if (tl.includes("carrefour")) return "Carrefour";
     if (tl.includes("mcdonald")) return "McDonald's";
     
-    t = t.replace(/BETALING MET DEBETKAART NUMMER\s+[\d\sX*]{15,30}/gi, '').replace(/BANCONTACT BANKREFERENTIE\s*:\s*[A-Z0-9\-]+/gi, '').replace(/VALUTADATUM\s*:\s*\d{2}\/\d{2}\/\d{4}/gi, '').replace(/Naam van de tegenpartij\s*:/gi, '').replace(/Mededeling\s*:/gi, '').replace(/Volgnummer\s*:\s*\w+/gi, '').replace(/\bBANCONTACT\b/gi, '').replace(/\/?\d{2}\/\d{4}\s*\d{2}:\d{2}/gi, '').replace(/\/?\d{2}\/\d{4}/gi, '').replace(/\d{2}\/\d{2}\/\d{4}/gi, '').replace(/\s+/g, ' ').trim().replace(/^[-:/,]+|[-:/,]+$/g, '');
-    return t.length < 2 ? "Transactie (Geen details)" : t.charAt(0).toUpperCase() + t.slice(1);
+    t = t.replace(/BETALING MET DEBETKAART NUMMER\s+[\d\sX*]{15,30}/gi, ''); 
+    t = t.replace(/BANCONTACT BANKREFERENTIE\s*:\s*[A-Z0-9\-]+/gi, '');
+    t = t.replace(/VALUTADATUM\s*:\s*\d{2}\/\d{2}\/\d{4}/gi, '');
+    t = t.replace(/Naam van de tegenpartij\s*:/gi, '');
+    t = t.replace(/Mededeling\s*:/gi, '');
+    t = t.replace(/Volgnummer\s*:\s*\w+/gi, '');
+    t = t.replace(/\bBANCONTACT\b/gi, '');
+    t = t.replace(/\/?\d{2}\/\d{4}\s*\d{2}:\d{2}/gi, '');
+    t = t.replace(/\/?\d{2}\/\d{4}/gi, '');
+    t = t.replace(/\d{2}\/\d{2}\/\d{4}/gi, '');
+    t = t.replace(/\s+/g, ' ').trim();
+    t = t.replace(/^[-:/,]+|[-:/,]+$/g, '').trim();
+    
+    if (t.length < 2) return "Transactie (Geen details)";
+    return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 function initialiseerDropdowns() {
     const jarenSet = new Set();
-    alleData.forEach(rij => { const jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM)); if (jaar !== "Onbekend") jarenSet.add(jaar); });
+    alleData.forEach(rij => { 
+        const jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM)); 
+        if (jaar !== "Onbekend") jarenSet.add(jaar); 
+    });
     jarenSet.add(String(new Date().getFullYear()));
+    
     const jaarSelect = document.getElementById('jaarSelect');
-    jaarSelect.innerHTML = ''; Array.from(jarenSet).sort().reverse().forEach(j => { jaarSelect.innerHTML += `<option value="${j}">${j}</option>`; });
+    jaarSelect.innerHTML = ''; 
+    Array.from(jarenSet).sort().reverse().forEach(j => { 
+        jaarSelect.innerHTML += `<option value="${j}">${j}</option>`; 
+    });
+    
     const maandenNaam = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+    
     const mndSelect = document.getElementById('filterMaand');
     mndSelect.innerHTML = '<option value="alle">Alle Maanden</option>';
-    maandenNaam.forEach((m, i) => { mndSelect.innerHTML += `<option value="${i}">${m}</option>`; });
+    maandenNaam.forEach((m, i) => { 
+        mndSelect.innerHTML += `<option value="${i}">${m}</option>`; 
+    });
+    
     const supMndSelect = document.getElementById('supFilterMaand');
     supMndSelect.innerHTML = '<option value="alle">Alle Maanden</option>';
-    maandenNaam.forEach((m, i) => { supMndSelect.innerHTML += `<option value="${i}">${m}</option>`; });
+    maandenNaam.forEach((m, i) => { 
+        supMndSelect.innerHTML += `<option value="${i}">${m}</option>`; 
+    });
+
     const hgSelect = document.getElementById('filterHoofdgroep');
     hgSelect.innerHTML = '<option value="alle">Alle Hoofdgroepen</option>';
-    Object.keys(HOOFD_GROEPEN).sort().forEach(hg => { hgSelect.innerHTML += `<option value="${hg}">${hg}</option>`; });
+    Object.keys(HOOFD_GROEPEN).sort().forEach(hg => { 
+        hgSelect.innerHTML += `<option value="${hg}">${hg}</option>`; 
+    });
     hgSelect.innerHTML += '<option value="Overig">Overig</option>';
+    
     const catSelect = document.getElementById('filterCategorie');
     catSelect.innerHTML = '<option value="alle">Alle Categorieën</option>';
-    Object.keys(CATEGORIE_RULES).sort().forEach(cat => { catSelect.innerHTML += `<option value="${cat}">${cat}</option>`; });
+    Object.keys(CATEGORIE_RULES).sort().forEach(cat => { 
+        catSelect.innerHTML += `<option value="${cat}">${cat}</option>`; 
+    });
     catSelect.innerHTML += '<option value="Overig">Overig</option>';
-    ['jaarSelect', 'filterMaand', 'filterHoofdgroep', 'filterCategorie', 'sorteerSelect', 'toonEnkelOverig'].forEach(id => { document.getElementById(id).addEventListener('change', updateDashboard); });
+    
+    ['jaarSelect', 'filterMaand', 'filterHoofdgroep', 'filterCategorie', 'sorteerSelect', 'toonEnkelOverig'].forEach(id => {
+        document.getElementById(id).addEventListener('change', updateDashboard);
+    });
+    
     document.getElementById('supFilterMaand').addEventListener('change', updateSupermarktDash);
     document.getElementById('jaarSelect').addEventListener('change', updateSupermarktDash);
-    updateDashboard(); updateSupermarktDash();
+
+    updateDashboard();
+    updateSupermarktDash();
 }
 
 function veranderWeek(delta) {
@@ -381,7 +417,7 @@ function updateWeekbudgetUI() {
     let tonenEl = document.getElementById('weekUitgegevenTonen');
     tonenEl.innerText = formatBedrag(totaalUitgegeven);
     tonenEl.className = uitgavenKleur;
-    document.getElementById('maandUitgegevenTonen').innerText = formatBedrag(totaalMaandUitgegeven, true);
+    document.getElementById('maandUitgegevenTonen').innerText = formatBedrag(totaalMaandUitgegeven);
     
     gecombineerdeLijst.sort((a, b) => b.datumObj - a.datumObj); 
     
@@ -394,7 +430,7 @@ function updateWeekbudgetUI() {
             html += `<tr>
                 <td><strong>${item.datumStr}</strong></td>
                 <td><div class="omschrijving-cel" title="${item.naam}">${item.naam}</div></td>
-                <td class="tekst-negatief"><strong>${formatBedrag(item.bedrag, true)}</strong></td>
+                <td class="tekst-negatief"><strong>${formatBedrag(item.bedrag)}</strong></td>
             </tr>`;
         });
         tbody.innerHTML = html;
@@ -403,18 +439,52 @@ function updateWeekbudgetUI() {
 
 function tekenSupPercGrafiek(gekozenJaar, supData) {
     let mndUniekeDagen = Array(12).fill().map(() => new Set());
-    supData.forEach(item => { if (item.ruweMaand !== null) mndUniekeDagen[item.ruweMaand].add(item.datumStr); });
-    let percData = Array(12).fill(null), today = new Date(), y = parseInt(gekozenJaar);
+    
+    supData.forEach(item => { 
+        if (item.ruweMaand !== null) mndUniekeDagen[item.ruweMaand].add(item.datumStr); 
+    });
+    
+    let percData = Array(12).fill(null);
+    let today = new Date();
+    let y = parseInt(gekozenJaar);
+    
     for (let i = 0; i < 12; i++) {
         if (y < today.getFullYear() || (y === today.getFullYear() && i <= today.getMonth())) {
-            let days = (y === today.getFullYear() && i === today.getMonth()) ? today.getDate() : new Date(y, i + 1, 0).getDate();
+            let days = new Date(y, i + 1, 0).getDate();
+            if (y === today.getFullYear() && i === today.getMonth()) {
+                days = today.getDate();
+            }
             percData[i] = Math.min((mndUniekeDagen[i].size / days) * 100, 100);
         }
     }
+    
     if (window.mijnSupPercGrafiek) window.mijnSupPercGrafiek.destroy();
+    
     window.mijnSupPercGrafiek = new Chart(document.getElementById('supPercGrafiek').getContext('2d'), {
-        type: 'bar', data: { labels: ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'], datasets: [{ label: '% Dagen', data: percData, backgroundColor: '#d97706' }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100 } } }
+        type: 'bar', 
+        data: { 
+            labels: ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'], 
+            datasets: [{ 
+                label: '% Dagen gewinkeld', 
+                data: percData, 
+                backgroundColor: '#d97706',
+                borderRadius: 4
+            }] 
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            scales: { 
+                y: { 
+                    max: 100, 
+                    beginAtZero: true,
+                    ticks: { callback: function(value) { return value + '%'; } }
+                } 
+            },
+            plugins: {
+                tooltip: { callbacks: { label: function(ctx) { return ctx.parsed.y.toFixed(1) + '%'; } } }
+            }
+        }
     });
 }
 
@@ -447,7 +517,13 @@ function updateSupermarktDash() {
         let d = parseDatumToDate(String(dStr));
         let winkel = schoonNaamOp(haalWaarde(rij, 'winkel') || 'Handmatige bon');
         if(d && String(d.getFullYear()) === gekozenJaar) {
-            supDataGeheelJaar.push({ datumObj: d, datumStr: String(dStr).split(' ')[0], bedrag: Math.abs(bedrag), winkel: winkel, ruweMaand: d.getMonth() });
+            supDataGeheelJaar.push({ 
+                datumObj: d, 
+                datumStr: String(dStr).split(' ')[0], 
+                bedrag: Math.abs(bedrag), 
+                winkel: winkel, 
+                ruweMaand: d.getMonth() 
+            });
         }
     });
     
@@ -474,7 +550,7 @@ function updateSupermarktDash() {
     let perc = Math.min((uniekeDagen.size / daysInPeriod) * 100, 100);
     document.getElementById('supAantalDagen').innerText = uniekeDagen.size;
     document.getElementById('supPercentage').innerText = perc.toFixed(1) + '%';
-    document.getElementById('supTotaal').innerText = formatBedrag(totaalBedrag, true);
+    document.getElementById('supTotaal').innerText = formatBedrag(totaalBedrag);
     
     let winkelArr = Object.keys(perWinkel).map(k => ({ naam: k, totaal: perWinkel[k] })).sort((a, b) => b.totaal - a.totaal);
     if (winkelArr.length === 0) {
@@ -482,7 +558,7 @@ function updateSupermarktDash() {
     } else {
         let wh = '';
         winkelArr.forEach(w => {
-            wh += `<tr><td><strong>${w.naam}</strong></td><td style="text-align:right;" class="tekst-negatief"><strong>${formatBedrag(w.totaal, true)}</strong></td></tr>`;
+            wh += `<tr><td><strong>${w.naam}</strong></td><td style="text-align:right;" class="tekst-negatief"><strong>${formatBedrag(w.totaal)}</strong></td></tr>`;
         });
         document.getElementById('supWinkelBody').innerHTML = wh;
     }
@@ -493,7 +569,7 @@ function updateSupermarktDash() {
     } else {
         let th = '';
         supDataFiltered.forEach(t => {
-            th += `<tr><td>${t.datumStr}</td><td><div class="omschrijving-cel" title="${t.winkel}">${t.winkel}</div></td><td class="tekst-negatief"><strong>${formatBedrag(t.bedrag, true)}</strong></td></tr>`;
+            th += `<tr><td>${t.datumStr}</td><td><div class="omschrijving-cel" title="${t.winkel}">${t.winkel}</div></td><td class="tekst-negatief"><strong>${formatBedrag(t.bedrag)}</strong></td></tr>`;
         });
         document.getElementById('supTransactiesBody').innerHTML = th;
     }
@@ -581,7 +657,8 @@ function bouwSlimmeInzichten() {
         }
     });
     
-    let dagenGepasseerd = huidigeDatum.getDate(), pacingFactor = dagenGepasseerd / new Date(huidigeDatum.getFullYear(), huidigeDatum.getMonth() + 1, 0).getDate();
+    let dagenGepasseerd = huidigeDatum.getDate();
+    let pacingFactor = dagenGepasseerd / new Date(huidigeDatum.getFullYear(), huidigeDatum.getMonth() + 1, 0).getDate();
     let inzichten = [];
     
     let alleGevondenCats = new Set([...Object.keys(uitgavenNu), ...Object.keys(uitgavenVorigeMaand)]);
@@ -604,9 +681,9 @@ function bouwSlimmeInzichten() {
     if (inzichten.length > 0) {
         inzichten.forEach(i => {
             if (i.type === 'waarschuwing') {
-                html += `<div style="padding: 10px; background: #fee2e2; border-left: 4px solid #ef4444; border-radius: 6px; margin-bottom: 5px;"><strong>${i.cat}</strong>: al ${formatBedrag(i.nu, true)} uit, verwacht was ${formatBedrag(i.verwacht, true)}.</div>`;
+                html += `<div style="padding: 10px; background: #fee2e2; border-left: 4px solid #ef4444; border-radius: 6px; margin-bottom: 5px;"><strong>${i.cat}</strong>: al ${formatBedrag(i.nu)} uit, verwacht was ${formatBedrag(i.verwacht)}.</div>`;
             } else {
-                html += `<div style="padding: 10px; background: #d1fae5; border-left: 4px solid #10b981; border-radius: 6px; margin-bottom: 5px;"><strong>${i.cat}</strong>: momenteel op ${formatBedrag(i.nu, true)}, vorige maand was dit ${formatBedrag(i.vorig, true)}.</div>`;
+                html += `<div style="padding: 10px; background: #d1fae5; border-left: 4px solid #10b981; border-radius: 6px; margin-bottom: 5px;"><strong>${i.cat}</strong>: momenteel op ${formatBedrag(i.nu)}, vorige maand was dit ${formatBedrag(i.vorig)}.</div>`;
             }
         });
     } else {
@@ -644,7 +721,7 @@ function verwerkData(data, huidigJaar) {
             } 
         } else {
             if (!isSparen) {
-                uitgaven += b; 
+                uitgaven += Math.abs(b); 
                 maanden[m].uit += b;
                 
                 if (VASTE_CATEGORIEEN.includes(cat)) {
@@ -673,8 +750,13 @@ function verwerkData(data, huidigJaar) {
     
     document.getElementById('jaarInkomsten').innerText = formatBedrag(inkomsten);
     document.getElementById('jaarUitgaven').innerText = formatBedrag(uitgaven);
-    document.getElementById('jaarBalans').innerText = formatBedrag(inkomsten + uitgaven);
-    document.getElementById('vastTotaal').innerText = formatBedrag(vast, true);
+    
+    const balans = inkomsten - uitgaven;
+    const balansEl = document.getElementById('jaarBalans');
+    balansEl.innerText = formatBedrag(balans);
+    balansEl.className = balans >= 0 ? "bedrag positief" : "bedrag negatief";
+    
+    document.getElementById('vastTotaal').innerText = formatBedrag(vast);
     
     const spaarDoel = 2000;
     let percentage = Math.min((spaarBalansVanafJuni / spaarDoel) * 100, 100);
@@ -712,7 +794,7 @@ function verwerkData(data, huidigJaar) {
         if (maandTop5Data[mnd]) {
             let items = Object.keys(maandTop5Data[mnd]).map(k => ({n: k, b: maandTop5Data[mnd][k]})).sort((a,b)=>b.b-a.b).slice(0,5);
             if (items.length > 0) {
-                top5Html = `<div style="padding:10px;">${items.map((i, index)=>`<strong>${index+1}.</strong> ${i.n}: <span class="tekst-negatief">${formatBedrag(i.b, true)}</span>`).join('<br>')}</div>`;
+                top5Html = `<div style="padding:10px;">${items.map((i, index)=>`<strong>${index+1}.</strong> ${i.n}: <span class="tekst-negatief">${formatBedrag(i.b)}</span>`).join('<br>')}</div>`;
             }
         }
         
@@ -750,7 +832,7 @@ function bouwTop5Tabel(top5Data) {
     
     let top5Html = top5Array.slice(0, 5).map((item, index) => {
         let medaille = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '▪️';
-        return `<tr><td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;">${medaille} <strong>${item.naam}</strong></td><td style="text-align:right; color:#ef4444; font-weight:700;">${formatBedrag(item.totaal, true)}</td></tr>`;
+        return `<tr><td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;">${medaille} <strong>${item.naam}</strong></td><td style="text-align:right; color:#ef4444; font-weight:700;">${formatBedrag(item.totaal)}</td></tr>`;
     }).join('');
     
     document.getElementById('top5Body').innerHTML = top5Html || '<tr><td colspan="2" style="text-align:center;">Geen gegevens</td></tr>';
@@ -764,7 +846,7 @@ function bouwDrillDownTabel(breakdown, totalen) {
         const hgRow = document.createElement('tr');
         hgRow.className = 'hg-row'; 
         hgRow.style.cursor = 'pointer';
-        hgRow.innerHTML = `<td><span class="pijl" style="display:inline-block; transition: transform 0.2s;">▶</span> <strong>${hg}</strong></td><td style="text-align: right;" class="tekst-negatief"><strong>${formatBedrag(totalen[hg], true)}</strong></td>`;
+        hgRow.innerHTML = `<td><span class="pijl" style="display:inline-block; transition: transform 0.2s;">▶</span> <strong>${hg}</strong></td><td style="text-align: right;" class="tekst-negatief"><strong>${formatBedrag(totalen[hg])}</strong></td>`;
         container.appendChild(hgRow);
         
         const subRows = [];
@@ -772,7 +854,7 @@ function bouwDrillDownTabel(breakdown, totalen) {
             const subRow = document.createElement('tr'); 
             subRow.className = 'sub-row'; 
             subRow.style.display = 'none';
-            subRow.innerHTML = `<td style="padding-left:30px; color:#64748b;">${sub}</td><td style="text-align:right;" class="tekst-negatief">${formatBedrag(breakdown[hg][sub], true)}</td>`;
+            subRow.innerHTML = `<td style="padding-left:30px; color:#64748b;">${sub}</td><td style="text-align:right;" class="tekst-negatief">${formatBedrag(breakdown[hg][sub])}</td>`;
             container.appendChild(subRow); 
             subRows.push(subRow);
         });
@@ -888,7 +970,7 @@ function bouwTrendGrafieken() {
         });
         
         if(document.getElementById('ytd-' + cat)) {
-            document.getElementById('ytd-' + cat).innerText = formatBedrag((trendData[cat][gekozenJaar] || Array(12).fill(0)).reduce((a, b) => a + b, 0), true);
+            document.getElementById('ytd-' + cat).innerText = formatBedrag((trendData[cat][gekozenJaar] || Array(12).fill(0)).reduce((a, b) => a + b, 0));
         }
         
         if (window['chart'+s]) window['chart'+s].destroy();

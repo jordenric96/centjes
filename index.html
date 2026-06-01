@@ -41,7 +41,7 @@
         .trend-container { position: relative; width: 100%; max-width: 100%; height: 200px; }
         
         .tab-container { display: flex; gap: 6px; margin-bottom: 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; flex-wrap: wrap; }
-        .tab-btn { flex: 1; min-width: 90px; background: transparent; border: none; padding: 8px; font-size: 0.9rem; font-weight: 700; color: #64748b; border-radius: 8px; cursor: pointer; text-align: center; }
+        .tab-btn { flex: 1; min-width: 75px; background: transparent; border: none; padding: 8px 4px; font-size: 0.85rem; font-weight: 700; color: #64748b; border-radius: 8px; cursor: pointer; text-align: center; }
         .tab-btn.active { background: var(--primary); color: white; }
         
         .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: white; padding: 8px; border-radius: 10px; border: 1px solid #e5e7eb; gap: 10px; }
@@ -86,10 +86,12 @@
             </div>
         </header>
 
+        <!-- NIEUW: De Frietjes Tab Toegevoegd -->
         <div class="tab-container">
             <button id="btn-tab-dash" class="tab-btn active" onclick="switchView('dashboard')">📊 Jaar</button>
             <button id="btn-tab-week" class="tab-btn" onclick="switchView('weekbudget')">🛒 Week</button>
-            <button id="btn-tab-sup" class="tab-btn" onclick="switchView('supermarkt')">🏪 Supermarkt</button>
+            <button id="btn-tab-sup" class="tab-btn" onclick="switchView('supermarkt')">🏪 Winkels</button>
+            <button id="btn-tab-friet" class="tab-btn" onclick="switchView('friet')">🍟 Frituur</button>
         </div>
 
         <div id="view-dashboard">
@@ -322,8 +324,75 @@
                     <h3 style="margin-top: 0; font-size: 0.95rem;">Alle Transacties</h3>
                     <div class="tabel-wrapper">
                         <table>
-                            <thead><tr><th>Datum</th><th>Winkel</th><th style="width: 30%;">Bedrag</th></tr></thead>
+                            <thead><tr><th>Datum</th><th>Winkel</th><th style="width: 30%; text-align: right;">Bedrag</th></tr></thead>
                             <tbody id="supTransactiesBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- NIEUW: DE FRIETJES TAB -->
+        <div id="view-friet" style="display: none;">
+            <div class="filter-row" style="background: #f8fafc; padding: 8px; border-radius: 8px; margin-bottom: 12px;">
+                <select id="frietFilterMaand" class="filter-select"></select>
+            </div>
+
+            <section class="dashboard-grid">
+                <div class="card totaal-card">
+                    <h3>Aantal Bezoeken</h3>
+                    <p id="frietBezoeken" class="bedrag neutraal" style="font-size: 1.4rem;">0</p>
+                </div>
+                <div class="card totaal-card">
+                    <h3>Gem. om de</h3>
+                    <p id="frietGemDagen" class="bedrag neutraal" style="font-size: 1.4rem; color: #d97706;">-</p>
+                </div>
+                <div class="card totaal-card">
+                    <h3>Gem. per bezoek</h3>
+                    <p id="frietGemKosten" class="bedrag negatief" style="font-size: 1.4rem;">€ 0,00</p>
+                </div>
+                <div class="card totaal-card">
+                    <h3>Totaal Uitgegeven</h3>
+                    <p id="frietTotaal" class="bedrag negatief" style="font-size: 1.4rem;">€ 0,00</p>
+                </div>
+            </section>
+
+            <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                <section class="card">
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Frequentie per week (weken)</h3>
+                    <div style="display: flex; justify-content: space-around; text-align: center; margin-top: 15px;">
+                        <div>
+                            <h4 style="margin: 0; color: #64748b; font-size: 0.75rem; text-transform: uppercase;">1x per week</h4>
+                            <p id="friet1x" style="font-size: 1.4rem; font-weight: 800; color: var(--primary); margin: 4px 0;">0x</p>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: #64748b; font-size: 0.75rem; text-transform: uppercase;">2x per week</h4>
+                            <p id="friet2x" style="font-size: 1.4rem; font-weight: 800; color: var(--primary); margin: 4px 0;">0x</p>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: #64748b; font-size: 0.75rem; text-transform: uppercase;">3+ per week</h4>
+                            <p id="friet3x" style="font-size: 1.4rem; font-weight: 800; color: var(--primary); margin: 4px 0;">0x</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 15px; text-align: center;">
+                        <h4 style="margin: 0; color: #64748b; font-size: 0.75rem; text-transform: uppercase;">Duurste Frituurbezoek</h4>
+                        <p id="frietDuurste" style="font-size: 1.4rem; font-weight: 800; color: var(--danger); margin: 4px 0;">€ 0,00</p>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Kosten per maand</h3>
+                    <div class="chart-container" style="height: 180px;"><canvas id="frietMaandGrafiek"></canvas></div>
+                </section>
+            </div>
+
+            <div class="content-grid">
+                <section class="card">
+                    <h3 style="margin-top: 0; font-size: 0.95rem;">Alle Frituur Bezoeken</h3>
+                    <div class="tabel-wrapper">
+                        <table>
+                            <thead><tr><th>Datum</th><th>Naam Frituur</th><th style="width: 30%; text-align: right;">Bedrag</th></tr></thead>
+                            <tbody id="frietTransactiesBody"></tbody>
                         </table>
                     </div>
                 </section>

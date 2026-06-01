@@ -122,6 +122,18 @@
                     <p id="vastTotaal" class="bedrag negatief">€ 0.00</p>
                 </div>
             </section>
+
+            <!-- NIEUW: Slimme Inzichten & YoY Grafiek -->
+            <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                <section class="card" style="background: #f8fafc;">
+                    <h3 style="margin-top: 0; color: var(--primary);">💡 Slimme Inzichten <span style="font-size: 0.75rem; color: #64748b; font-weight: normal;">(Huidige maand vs afgelopen 6 mnd)</span></h3>
+                    <div id="inzichtenBody" style="font-size: 0.9rem;"></div>
+                </section>
+                <section class="card">
+                    <h3 style="margin-top: 0;">Jaar-op-Jaar (Uitgaven)</h3>
+                    <div class="chart-container" style="height: 180px;"><canvas id="yoyGrafiek"></canvas></div>
+                </section>
+            </div>
             
             <div class="content-grid">
                 <section class="card">

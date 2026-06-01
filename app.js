@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Strikte naam-opschoning voor supermarkten & winkels)
+// app.js - Financiële Dashboard (Schelck Huwaert = Delhaize Fix)
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -15,7 +15,7 @@ const KOLOM_DETAILS = "Details";
 const KOLOM_TYPE = "Type verrichting";
 
 const CATEGORIE_RULES = {
-    "Supermarkt": ["huwaert", "Dierendo", "ESN", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "Alvo", "FOOD FACTORY", "HELLOFRESH", "WIBRA"],
+    "Supermarkt": ["huwaert", "schelck", "Dierendo", "ESN", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "Alvo", "FOOD FACTORY", "HELLOFRESH", "WIBRA"],
     "Creche": ["disneyland", "creche"],
     "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG", "FOODCOMPANY", "The Foodcompany"],
@@ -249,11 +249,16 @@ function schoonNaamOp(rij) {
 
     let tl = t.toLowerCase();
     
-    // --- STRIKTE SAMENVOEGING VOOR WINKELS ---
     if (tl.includes("ricour-de bruyn") || tl.includes("ricour noe")) return "Sparen (Intern)";
-    if (tl.includes("disneyland") || tl.includes("kinderopvang") || tl.includes("creche")) return "Disneyland Kinderopvang";
+    if (tl.includes("disneyland")) return "Disneyland Kinderopvang";
     
-    if (tl.includes("delhaize")) return "Delhaize";
+    // --- EXTRA AGRESSIEVE CHECK VOOR DELHAIZE ---
+    if (tl.includes("schelck") || tl.includes("huwaert") || tl.includes("delhaize")) return "Delhaize";
+    
+    if (tl.includes("okay")) return "Okay";
+    if (tl.includes("kruidvat")) return "Kruidvat";
+    if (tl.includes("albert heijn")) return "Albert Heijn";
+    if (tl.includes("freshville") || tl.includes("alvo")) return "Alvo";
     if (tl.includes("bon'ap") || tl.includes("bonap")) return "Bon'Ap";
     if (tl.includes("hellofresh")) return "HelloFresh";
     if (tl.includes("aldi")) return "Aldi";
@@ -261,10 +266,6 @@ function schoonNaamOp(rij) {
     if (tl.includes("ava ")) return "AVA";
     if (tl.includes("dierendo")) return "Atelier Dierendo";
     if (tl.includes("esn.com") || tl.includes("esn ")) return "ESN";
-    if (tl.includes("okay")) return "Okay";
-    if (tl.includes("kruidvat")) return "Kruidvat";
-    if (tl.includes("albert heijn")) return "Albert Heijn";
-    if (tl.includes("freshville")) return "Alvo";
     if (tl.includes("colruyt")) return "Colruyt";
     if (tl.includes("carrefour")) return "Carrefour";
     if (tl.includes("mcdonald")) return "McDonald's";

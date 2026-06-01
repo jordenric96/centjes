@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Schelck Huwaert = Delhaize Fix)
+// app.js - Financiële Dashboard (Geen icoontjes, alles strak gegroepeerd)
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -236,25 +236,29 @@ function formatBedrag(g) {
     return "€ " + Math.abs(g).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
 }
 
-function schoonNaamOp(rij) {
-    let tp = haalWaarde(rij, KOLOM_TEGENPARTIJ) || '';
-    let md = haalWaarde(rij, KOLOM_MEDEDELING) || '';
-    let dt = haalWaarde(rij, KOLOM_DETAILS) || '';
+// Centrale schoonmaak-functie (Hier zorgen we dat de manuele invoer ook netjes past!)
+function schoonNaamOp(naamInput, rij = null) {
+    let t = "";
     
-    let parts = [];
-    if (tp) parts.push(String(tp).trim());
-    if (md) parts.push(String(md).trim());
-    if (dt) parts.push(String(dt).trim());
-    let t = parts.join(" ");
+    if (rij !== null) {
+        let tp = haalWaarde(rij, KOLOM_TEGENPARTIJ) || '';
+        let md = haalWaarde(rij, KOLOM_MEDEDELING) || '';
+        let dt = haalWaarde(rij, KOLOM_DETAILS) || '';
+        let parts = [];
+        if (tp) parts.push(String(tp).trim());
+        if (md) parts.push(String(md).trim());
+        if (dt) parts.push(String(dt).trim());
+        t = parts.join(" ");
+    } else if (typeof naamInput === 'string') {
+        t = naamInput.trim();
+    }
 
     let tl = t.toLowerCase();
     
     if (tl.includes("ricour-de bruyn") || tl.includes("ricour noe")) return "Sparen (Intern)";
     if (tl.includes("disneyland")) return "Disneyland Kinderopvang";
     
-    // --- EXTRA AGRESSIEVE CHECK VOOR DELHAIZE ---
     if (tl.includes("schelck") || tl.includes("huwaert") || tl.includes("delhaize")) return "Delhaize";
-    
     if (tl.includes("okay")) return "Okay";
     if (tl.includes("kruidvat")) return "Kruidvat";
     if (tl.includes("albert heijn")) return "Albert Heijn";
@@ -270,6 +274,7 @@ function schoonNaamOp(rij) {
     if (tl.includes("carrefour")) return "Carrefour";
     if (tl.includes("mcdonald")) return "McDonald's";
     
+    // Als het geen bekende winkel is, rommel eruit filteren:
     t = t.replace(/BETALING MET DEBETKAART NUMMER\s+[\d\sX*]{15,30}/gi, ''); 
     t = t.replace(/BANCONTACT BANKREFERENTIE\s*:\s*[A-Z0-9\-]+/gi, '');
     t = t.replace(/VALUTADATUM\s*:\s*\d{2}\/\d{2}\/\d{4}/gi, '');
@@ -282,8 +287,11 @@ function schoonNaamOp(rij) {
     t = t.replace(/\d{2}\/\d{2}\/\d{4}/gi, '');
     t = t.replace(/\s+/g, ' ').trim();
     t = t.replace(/^[-:/,]+|[-:/,]+$/g, '').trim();
+    
     if (t.length < 2) return "Transactie (Geen details)";
-    return t;
+    
+    // Zorgt ervoor dat handmatig ingegeven "Okay" netjes met een hoofdletter O wordt getoond
+    return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 function initialiseerDropdowns() {
@@ -359,7 +367,7 @@ function updateWeekbudgetUI() {
         const d = parseDatumToDate(haalWaarde(rij, KOLOM_DATUM));
         if(d && getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
             totaalUitgegeven += absoluteBedrag;
-            gecombineerdeLijst.push({ datumObj: d, datumStr: haalWaarde(rij, KOLOM_DATUM).split(' ')[0], naam: schoonNaamOp(rij), bedrag: absoluteBedrag });
+            gecombineerdeLijst.push({ datumObj: d, datumStr: haalWaarde(rij, KOLOM_DATUM).split(' ')[0], naam: schoonNaamOp(null, rij), bedrag: absoluteBedrag });
         }
     });
 
@@ -367,7 +375,9 @@ function updateWeekbudgetUI() {
         budgetData.forEach(rij => {
             let dStr = haalWaarde(rij, 'datum') || haalWaarde(rij, 'tijdstempel'); 
             let bStr = haalWaarde(rij, 'bedrag'); 
-            let winkel = haalWaarde(rij, 'winkel') || 'Handmatige bon';
+            let ruweWinkel = haalWaarde(rij, 'winkel') || 'Handmatige bon';
+            let winkel = schoonNaamOp(ruweWinkel); // We sturen de handmatige input óók door de schoonmaakmachine!
+            
             if (!dStr || bStr == null) return;
             let bedrag = parseBedragNumber(bStr);
             if (isNaN(bedrag)) return;
@@ -376,7 +386,7 @@ function updateWeekbudgetUI() {
             if (d && d.getFullYear() === doelJaar && d.getMonth() === doelMaand) totaalMaandUitgegeven += absoluteBedrag;
             if(d && getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
                 totaalUitgegeven += absoluteBedrag;
-                gecombineerdeLijst.push({ datumObj: d, datumStr: String(dStr).split(' ')[0], naam: "✍️ " + winkel, bedrag: absoluteBedrag });
+                gecombineerdeLijst.push({ datumObj: d, datumStr: String(dStr).split(' ')[0], naam: winkel, bedrag: absoluteBedrag });
             }
         });
     }
@@ -402,11 +412,10 @@ function updateSupermarktDash() {
             let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
             if(b < 0) { 
                 supData.push({
-                    isManual: false,
                     datumObj: parseDatumToDate(haalWaarde(rij, KOLOM_DATUM)),
                     datumStr: haalWaarde(rij, KOLOM_DATUM).split(' ')[0],
                     bedrag: Math.abs(b),
-                    winkel: schoonNaamOp(rij),
+                    winkel: schoonNaamOp(null, rij),
                     ruweMaand: haalRuweMaand(haalWaarde(rij, KOLOM_DATUM))
                 });
             }
@@ -421,13 +430,15 @@ function updateSupermarktDash() {
         if(isNaN(bedrag)) return;
         let d = parseDatumToDate(String(dStr));
         
+        let ruweWinkel = haalWaarde(rij, 'winkel') || 'Handmatige bon';
+        let winkel = schoonNaamOp(ruweWinkel);
+
         if(d && String(d.getFullYear()) === gekozenJaar) {
             supData.push({
-                isManual: true,
                 datumObj: d,
                 datumStr: String(dStr).split(' ')[0],
                 bedrag: Math.abs(bedrag),
-                winkel: "✍️ " + (haalWaarde(rij, 'winkel') || 'Handmatige bon'),
+                winkel: winkel,
                 ruweMaand: d.getMonth()
             });
         }
@@ -547,7 +558,7 @@ function verwerkData(data, huidigJaar) {
             if (VASTE_CATEGORIEEN.includes(cat)) {
                 vast += Math.abs(b);
             } else if (cat !== "Sparen & Intern") {
-                let winkelNaam = schoonNaamOp(r);
+                let winkelNaam = schoonNaamOp(null, r);
                 if (winkelNaam !== "Transactie (Geen details)" && winkelNaam !== "Sparen (Intern)") {
                     if (!top5Data[winkelNaam]) top5Data[winkelNaam] = 0;
                     top5Data[winkelNaam] += Math.abs(b);
@@ -721,6 +732,6 @@ function bouwTransactieTabel(data) {
     document.getElementById('tableHead').innerHTML = `<tr><th>Datum</th><th>Omschrijving</th><th>Bedrag</th><th>Groep</th><th>Cat</th></tr>`;
     document.getElementById('tableBody').innerHTML = data.slice(0, 150).map(rij => {
         let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
-        return `<tr><td>${haalWaarde(rij, KOLOM_DATUM)}</td><td><div class="omschrijving-cel" title="${schoonNaamOp(rij)}">${schoonNaamOp(rij)}</div></td><td><span class="${b>0?'tekst-positief':'tekst-negatief'}"><strong>${formatBedrag(b)}</strong></span></td><td>${bepaalHoofdgroep(bepaalCategorie(rij))}</td><td>${bepaalCategorie(rij)}</td></tr>`
+        return `<tr><td>${haalWaarde(rij, KOLOM_DATUM)}</td><td><div class="omschrijving-cel" title="${schoonNaamOp(null, rij)}">${schoonNaamOp(null, rij)}</div></td><td><span class="${b>0?'tekst-positief':'tekst-negatief'}"><strong>${formatBedrag(b)}</strong></span></td><td>${bepaalHoofdgroep(bepaalCategorie(rij))}</td><td>${bepaalCategorie(rij)}</td></tr>`
     }).join('');
 }

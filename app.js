@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Multi-Sheet ondersteuning, Anti-NaN, Spaardoel)
+// app.js - Financiële Dashboard (Volledige jaren tonen in trends)
 
 // De 3 links naar jouw aparte tabbladen:
 const bankSheetUrls = [
@@ -90,7 +90,6 @@ function switchView(viewName) {
     if(viewName === 'weekbudget') { updateWeekbudgetUI(); }
 }
 
-// Meerdere tabbladen ophalen via async functies
 function fetchCSV(url) {
     return new Promise((resolve, reject) => {
         if (!url || url.includes("HIER_PLAKKEN")) { resolve([]); return; }
@@ -108,14 +107,12 @@ async function laadAlleData() {
         statusEl.innerText = "Gegevens ophalen...";
         statusEl.classList.remove('succes');
 
-        // Haal beide bank tabbladen tegelijk op
         let bankPromises = bankSheetUrls.map(url => fetchCSV(url));
         let bankResults = await Promise.all(bankPromises);
         
         alleData = [];
         bankResults.forEach(data => alleData = alleData.concat(data));
 
-        // Haal het supermarkt tabblad op
         budgetData = await fetchCSV(supermarktSheetUrl);
 
         if (alleData.length > 0) {
@@ -133,7 +130,6 @@ async function laadAlleData() {
     }
 }
 
-// Start het ophalen
 laadAlleData();
 
 function haalWaarde(rij, kolomMatch) {
@@ -279,7 +275,6 @@ function initialiseerDropdowns() {
         if (jaar !== "Onbekend") jarenSet.add(jaar); 
     });
     
-    // Zorg dat in ieder geval het huidige jaar in de dropdown staat, ook als sheet leeg is
     jarenSet.add(String(new Date().getFullYear()));
     
     const jaarSelect = document.getElementById('jaarSelect');
@@ -329,7 +324,6 @@ function updateWeekbudgetUI() {
     
     let totaalUitgegeven = 0, totaalMaandUitgegeven = 0, gecombineerdeLijst = [];
     
-    // 1. Bank Data voor supermarkt inladen
     alleData.forEach(rij => {
         if(bepaalCategorie(rij) !== 'Supermarkt') return;
         
@@ -349,7 +343,6 @@ function updateWeekbudgetUI() {
         }
     });
 
-    // 2. Handmatige bonnen inladen uit je nieuwe "supermarkt" tabblad
     if (budgetData.length > 0) {
         budgetData.forEach(rij => {
             let dStr = haalWaarde(rij, 'datum');
@@ -364,7 +357,6 @@ function updateWeekbudgetUI() {
             let absoluteBedrag = Math.abs(bedrag);
             let d = parseDatumToDate(dStr);
             
-            // Controleer of de bon in deze maand viel
             if (d && d.getFullYear() === doelJaar && d.getMonth() === doelMaand) {
                 totaalMaandUitgegeven += absoluteBedrag;
             }
@@ -425,7 +417,7 @@ function verwerkData(data, huidigJaar) {
     let inkomsten = 0, uitgaven = 0, vast = 0;
     let spaarBalansVanafJuni = 0; 
     let actueelJaar = parseInt(huidigJaar);
-    let startDatumSpaardoel = new Date(actueelJaar, 5, 1); // 1 JUNI als reset-punt
+    let startDatumSpaardoel = new Date(actueelJaar, 5, 1); 
 
     const maanden = {}, cats = {}, groepen = {}, hgBreakdown = {};
     
@@ -557,9 +549,14 @@ function tekenBasisGrafieken(mndData, grpData, gesorteerdeMaanden) {
     });
 }
 
+// UPDATE: De grafieken tonen nu standaard 12 maanden, huidige jaar stopt na deze maand, eerdere jaren lopen tot december.
 function bouwTrendGrafieken() {
-    let huidigeMaandIndex = new Date().getMonth(); 
-    const maandLabels = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'].slice(0, huidigeMaandIndex + 1);
+    let huidigeDatum = new Date();
+    let huidigJaarNummer = huidigeDatum.getFullYear();
+    let huidigeMaandIndex = huidigeDatum.getMonth(); 
+    
+    // Altijd 12 maanden op de X-as
+    const maandLabels = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
     const trendData = { 'Supermarkt': {}, 'Online': {}, 'Frietjes': {} };
     const jarenSet = new Set();
     const gekozenJaar = document.getElementById('jaarSelect').value;
@@ -569,23 +566,59 @@ function bouwTrendGrafieken() {
         if (isNaN(b) || b >= 0) return; 
         const cat = bepaalCategorie(rij);
         if (['Supermarkt', 'Online', 'Frietjes'].includes(cat)) {
-            let jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM)), maand = haalRuweMaand(haalWaarde(rij, KOLOM_DATUM));
-            if (jaar !== "Onbekend" && maand !== null) { jarenSet.add(jaar); if (!trendData[cat][jaar]) trendData[cat][jaar] = Array(12).fill(0); trendData[cat][jaar][maand] += Math.abs(b); }
+            let jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM));
+            let maand = haalRuweMaand(haalWaarde(rij, KOLOM_DATUM));
+            if (jaar !== "Onbekend" && maand !== null) { 
+                jarenSet.add(jaar); 
+                if (!trendData[cat][jaar]) trendData[cat][jaar] = Array(12).fill(0); 
+                trendData[cat][jaar][maand] += Math.abs(b); 
+            }
         }
     });
     
     const jarenArray = Array.from(jarenSet).sort().reverse(); 
     const baseColors = { 'Supermarkt': [5, 150, 105], 'Online': [59, 130, 246], 'Frietjes': [234, 179, 8] };
-    const buildDatasets = (cat) => jarenArray.map((jaar, index) => ({ label: jaar, data: (trendData[cat][jaar] || Array(12).fill(0)).slice(0, huidigeMaandIndex + 1), borderColor: `rgba(${baseColors[cat].join(',')}, ${index === 0 ? 1 : 0.5})`, borderWidth: index === 0 ? 3 : 2, fill: false, tension: 0.4 }));
-    const baseOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } };
+    
+    const buildDatasets = (cat) => jarenArray.map((jaar, index) => {
+        let isHuidigJaar = (parseInt(jaar) === huidigJaarNummer);
+        let ruweData = trendData[cat][jaar] || Array(12).fill(0);
+        let geplotteData = [];
+        
+        for (let i = 0; i < 12; i++) {
+            // Als we in het huidige jaar zitten, tekenen we geen lijn in de toekomstige maanden
+            if (isHuidigJaar && i > huidigeMaandIndex) {
+                geplotteData.push(null);
+            } else {
+                geplotteData.push(ruweData[i]);
+            }
+        }
+
+        return { 
+            label: jaar, 
+            data: geplotteData, 
+            borderColor: `rgba(${baseColors[cat].join(',')}, ${index === 0 ? 1 : 0.5})`, 
+            borderWidth: index === 0 ? 3 : 2, 
+            fill: false, 
+            tension: 0.4 
+        };
+    });
+
+    const baseOptions = { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        plugins: { legend: { position: 'top' } }, 
+        scales: { y: { beginAtZero: true } },
+        spanGaps: false // Breek de lijn af na de huidige maand
+    };
     
     ['Sup', 'Fri', 'Onl'].forEach((s, i) => {
         const cat = ['Supermarkt', 'Frietjes', 'Online'][i];
         
-        let dataGeknipt = (trendData[cat][gekozenJaar] || Array(12).fill(0)).slice(0, huidigeMaandIndex + 1);
-        let somYTD = dataGeknipt.reduce((a, b) => a + b, 0);
+        // Totaal updaten
+        let dataVoorTotaal = trendData[cat][gekozenJaar] || Array(12).fill(0);
+        let somJaar = dataVoorTotaal.reduce((a, b) => a + b, 0);
         if(document.getElementById('ytd-' + cat)) {
-            document.getElementById('ytd-' + cat).innerText = formatBedrag(somYTD);
+            document.getElementById('ytd-' + cat).innerText = formatBedrag(somJaar);
         }
 
         if (window['chart'+s]) window['chart'+s].destroy();

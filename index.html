@@ -62,6 +62,31 @@
         .header-titel { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
         .header-titel h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
         .status-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: #e2e8f0; }
+
+        /* NIEUW: Zwevende Plus-knop voor snelle invoer */
+        .fab-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--success);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            font-weight: 300;
+            text-decoration: none;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+            z-index: 1000;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .fab-btn:hover {
+            transform: scale(1.08);
+            background-color: #059669;
+        }
     </style>
 </head>
 <body>
@@ -153,22 +178,33 @@
                 </section>
             </div>
 
-            <div class="content-grid">
-                <section class="card">
-                    <h3 style="margin-top: 0;">Trend per Maand</h3>
-                    <div class="tabel-wrapper">
-                        <table>
-                            <thead><tr><th>Maand</th><th>In</th><th>Uit</th><th>Balans</th></tr></thead>
-                            <tbody id="maandBody"></tbody>
-                        </table>
-                    </div>
-                </section>
+            <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
                 <section class="card">
                     <h3 style="margin-top: 0;">Uitgaven Analyse</h3>
                     <div class="tabel-wrapper">
                         <table id="drillDownTable">
                             <thead><tr><th>Groep / Sub-categorie</th><th style="text-align: right;">Totaal</th></tr></thead>
                             <tbody id="hoofdgroepBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <section class="card">
+                    <h3 style="margin-top: 0;">Top 5 Winkels (Variabel)</h3>
+                    <div class="tabel-wrapper">
+                        <table id="top5Table">
+                            <thead><tr><th>Winkel</th><th style="text-align: right;">Bedrag</th></tr></thead>
+                            <tbody id="top5Body"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h3 style="margin-top: 0;">Trend per Maand</h3>
+                    <div class="tabel-wrapper">
+                        <table>
+                            <thead><tr><th>Maand</th><th>In</th><th>Uit</th><th>Balans</th></tr></thead>
+                            <tbody id="maandBody"></tbody>
                         </table>
                     </div>
                 </section>
@@ -224,6 +260,10 @@
         </div>
     </div>
     
+    <a href="JOUW_GOOGLE_FORM_LINK_HIER" target="_blank" class="fab-btn" title="Kassaticket toevoegen">
+        +
+    </a>
+
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); });

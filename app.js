@@ -1,4 +1,4 @@
-// app.js - Financieel Dashboard - Volledig met Frietjes Tab
+// app.js - Financieel Dashboard - Volledig met Gesynchroniseerde Database
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -119,6 +119,29 @@ async function laadAlleData() {
     });
 
     budgetData = await fetchCSV(supermarktSheetUrl);
+
+    // DE MAGISCHE FIX: Injecteer de handmatige invoer direct in de algemene database!
+    if (budgetData.length > 0) {
+        budgetData.forEach(rij => {
+            let dStr = haalWaarde(rij, 'datum') || haalWaarde(rij, 'tijdstempel');
+            let bStr = haalWaarde(rij, 'bedrag');
+            let winkel = haalWaarde(rij, 'winkel') || 'Handmatige bon';
+
+            if (dStr && bStr != null) {
+                let bedragFloat = parseBedragNumber(bStr);
+                if (!isNaN(bedragFloat)) {
+                    alleData.push({
+                        "Uitvoeringsdatum": String(dStr).split(' ')[0],
+                        "Bedrag": -Math.abs(bedragFloat), // Altijd een uitgave
+                        "Naam van de tegenpartij": schoonNaamOp(winkel), // Opschonen voor strakke naam
+                        "Mededeling": "Google Formulier",
+                        "Details": "",
+                        "Type verrichting": "Handmatig"
+                    });
+                }
+            }
+        });
+    }
 
     if (alleData.length > 0) {
         statusEl.innerText = `Bank verbonden (${alleData.length} transacties)`;
@@ -398,31 +421,6 @@ function updateWeekbudgetUI() {
             });
         }
     });
-
-    if (budgetData.length > 0) {
-        budgetData.forEach(rij => {
-            let dStr = haalWaarde(rij, 'datum') || haalWaarde(rij, 'tijdstempel'); 
-            let bStr = haalWaarde(rij, 'bedrag'); 
-            let winkel = schoonNaamOp(haalWaarde(rij, 'winkel') || 'Handmatige bon');
-            
-            if (!dStr || bStr == null) return;
-            let bedrag = parseBedragNumber(bStr);
-            if (isNaN(bedrag)) return;
-            let absoluteBedrag = Math.abs(bedrag);
-            let d = parseDatumToDate(String(dStr));
-            
-            if (d && d.getFullYear() === doelJaar && d.getMonth() === doelMaand) totaalMaandUitgegeven += absoluteBedrag;
-            if (d && getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
-                totaalUitgegeven += absoluteBedrag;
-                gecombineerdeLijst.push({ 
-                    datumObj: d, 
-                    datumStr: String(dStr).split(' ')[0], 
-                    naam: winkel, 
-                    bedrag: absoluteBedrag 
-                });
-            }
-        });
-    }
     
     let uitgavenKleur = totaalUitgegeven <= 180 ? 'bedrag positief' : 'bedrag negatief';
     let tonenEl = document.getElementById('weekUitgegevenTonen');
@@ -448,7 +446,6 @@ function updateWeekbudgetUI() {
     }
 }
 
-// NIEUW: UPDATE FRIET DASHBOARD LOGICA
 function updateFrietDash() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
     const fMaand = document.getElementById('frietFilterMaand').value; 
@@ -619,25 +616,6 @@ function updateSupermarktDash() {
                     ruweMaand: haalRuweMaand(haalWaarde(rij, KOLOM_DATUM))
                 });
             }
-        }
-    });
-    
-    budgetData.forEach(rij => {
-        let dStr = haalWaarde(rij, 'datum') || haalWaarde(rij, 'tijdstempel');
-        let bStr = haalWaarde(rij, 'bedrag');
-        if(!dStr || !bStr) return;
-        let bedrag = parseBedragNumber(bStr);
-        if(isNaN(bedrag)) return;
-        let d = parseDatumToDate(String(dStr));
-        let winkel = schoonNaamOp(haalWaarde(rij, 'winkel') || 'Handmatige bon');
-        if(d && String(d.getFullYear()) === gekozenJaar) {
-            supDataGeheelJaar.push({ 
-                datumObj: d, 
-                datumStr: String(dStr).split(' ')[0], 
-                bedrag: Math.abs(bedrag), 
-                winkel: winkel, 
-                ruweMaand: d.getMonth() 
-            });
         }
     });
     

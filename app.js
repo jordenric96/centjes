@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (YTD Trendgrafieken, Frietjes, Filters, Netto Balans & PWA)
+// app.js - Financiële Dashboard (Alvo toevoeging, Spaardoel, Strakke mobiele lay-out)
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 const budgetSheetUrl = ""; 
@@ -11,7 +11,7 @@ const KOLOM_DETAILS = "Details";
 const KOLOM_TYPE = "Type verrichting";
 
 const CATEGORIE_RULES = {
-    "Supermarkt": ["huwaert", "Dierendo", "ESN", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "FRESHVILLE", "FOOD FACTORY", "HELLOFRESH", "WIBRA", "FOODCOMPANY"],
+    "Supermarkt": ["huwaert", "Dierendo", "ESN", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "Alvo", "FOOD FACTORY", "HELLOFRESH", "WIBRA", "FOODCOMPANY"],
     "Creche": ["disneyland", "kinderopvang", "creche"],
     "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG"],
@@ -65,7 +65,7 @@ const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit
 let alleData = []; 
 let budgetData = []; 
 let mijnMaandGrafiek = null, mijnCatGrafiek = null, mijnBalansGrafiek = null;
-let chartSup = null, chartOnl = null, chartKle = null, chartFri = null;
+let chartSup = null, chartOnl = null, chartFri = null;
 
 let huidigDatum = new Date();
 let toonJaar = huidigDatum.getFullYear();
@@ -172,6 +172,7 @@ function schoonNaamOp(rij) {
     if (tl.includes("kruidvat")) return "Kruidvat";
     if (tl.includes("schelck huwaert")) return "Delhaize";
     if (tl.includes("albert heijn")) return "Albert Heijn";
+    if (tl.includes("freshville")) return "Alvo";
     
     t = t.replace(/BETALING MET DEBETKAART NUMMER\s+[\d\sX*]{15,30}/gi, ''); 
     t = t.replace(/BANCONTACT BANKREFERENTIE\s*:\s*[A-Z0-9\-]+/gi, '');
@@ -321,6 +322,21 @@ function verwerkData(data, huidigJaar) {
     document.getElementById('jaarBalans').innerText = (balans < 0 ? "- " : "") + formatBedrag(balans);
     document.getElementById('vastTotaal').innerText = formatBedrag(vast);
     
+    // Spaardoel Logica Update
+    const spaarDoel = 2000;
+    let percentage = (balans / spaarDoel) * 100;
+    if (percentage < 0) percentage = 0;
+    if (percentage > 100) percentage = 100;
+    
+    const bar = document.getElementById('spaardoelBar');
+    const tekst = document.getElementById('spaardoelTekst');
+    if (bar && tekst) {
+        bar.style.width = percentage + '%';
+        tekst.innerText = formatBedrag(balans);
+        if (balans >= spaarDoel) { bar.style.backgroundColor = '#059669'; } 
+        else { bar.style.backgroundColor = '#10b981'; }
+    }
+    
     const gesorteerdeMaanden = Object.keys(maanden).sort();
     
     document.getElementById('maandBody').innerHTML = [...gesorteerdeMaanden].reverse().map(mnd => {
@@ -360,7 +376,6 @@ function bouwDrillDownTabel(breakdown, totalen) {
 }
 
 function tekenBasisGrafieken(mndData, grpData, gesorteerdeMaanden) {
-    // 1. Inkomsten vs Uitgaven (Lijngrafiek)
     if (mijnMaandGrafiek) mijnMaandGrafiek.destroy();
     const maandLabels = gesorteerdeMaanden.map(m => {
         if(m === "Onbekend") return m;
@@ -375,26 +390,24 @@ function tekenBasisGrafieken(mndData, grpData, gesorteerdeMaanden) {
         options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { mode: 'index', intersect: false } }, interaction: { mode: 'nearest', axis: 'x', intersect: false } }
     });
 
-    // 2. Netto Balans (Spaar-trend)
     if (mijnBalansGrafiek) mijnBalansGrafiek.destroy();
     let cumulatief = 0;
-    const maandNetto = gesorteerdeMaanden.map(m => mndData[m].in + mndData[m].uit); // uit = negatief
+    const maandNetto = gesorteerdeMaanden.map(m => mndData[m].in + mndData[m].uit); 
     const cumulatiefData = maandNetto.map(netto => { cumulatief += netto; return cumulatief; });
-    const barColors = maandNetto.map(val => val >= 0 ? 'rgba(0, 230, 118, 0.5)' : 'rgba(255, 61, 0, 0.5)');
+    const barColors = maandNetto.map(val => val >= 0 ? 'rgba(16, 185, 129, 0.6)' : 'rgba(239, 68, 68, 0.6)');
     
     mijnBalansGrafiek = new Chart(document.getElementById('balansGrafiek').getContext('2d'), {
         type: 'bar',
         data: {
             labels: maandLabels,
             datasets: [
-                { type: 'line', label: 'Cumulatief (Trend)', data: cumulatiefData, borderColor: '#1e3a8a', backgroundColor: 'rgba(30, 58, 138, 0.1)', borderWidth: 3, fill: true, tension: 0.3 },
+                { type: 'line', label: 'Spaar Evolutie', data: cumulatiefData, borderColor: '#1e3a8a', backgroundColor: 'rgba(30, 58, 138, 0.1)', borderWidth: 3, fill: true, tension: 0.3 },
                 { type: 'bar', label: 'Maand Resultaat', data: maandNetto, backgroundColor: barColors, borderRadius: 4 }
             ]
         },
         options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false } }
     });
 
-    // 3. Verdeling
     if (mijnCatGrafiek) mijnCatGrafiek.destroy();
     const frisseKleuren = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A733FF', '#FF3366', '#00E5FF', '#999999', '#4CAF50'];
     const gesorteerdeGroepen = Object.keys(grpData).sort((a, b) => grpData[b] - grpData[a]);
@@ -407,23 +420,34 @@ function tekenBasisGrafieken(mndData, grpData, gesorteerdeMaanden) {
 function bouwTrendGrafieken() {
     let huidigeMaandIndex = new Date().getMonth(); 
     const maandLabels = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'].slice(0, huidigeMaandIndex + 1);
-    const trendData = { 'Supermarkt': {}, 'Online': {}, 'Kleren': {}, 'Frietjes': {} };
+    const trendData = { 'Supermarkt': {}, 'Online': {}, 'Frietjes': {} };
     const jarenSet = new Set();
+    const gekozenJaar = document.getElementById('jaarSelect').value;
+
     alleData.forEach(rij => {
         let b = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
         if (isNaN(b) || b >= 0) return; 
         const cat = bepaalCategorie(rij);
-        if (['Supermarkt', 'Online', 'Kleren', 'Frietjes'].includes(cat)) {
+        if (['Supermarkt', 'Online', 'Frietjes'].includes(cat)) {
             let jaar = haalJaar(rij[KOLOM_DATUM]), maand = haalRuweMaand(rij[KOLOM_DATUM]);
             if (jaar !== "Onbekend" && maand !== null) { jarenSet.add(jaar); if (!trendData[cat][jaar]) trendData[cat][jaar] = Array(12).fill(0); trendData[cat][jaar][maand] += Math.abs(b); }
         }
     });
+    
     const jarenArray = Array.from(jarenSet).sort().reverse(); 
-    const baseColors = { 'Supermarkt': [5, 150, 105], 'Online': [59, 130, 246], 'Kleren': [236, 72, 153], 'Frietjes': [234, 179, 8] };
+    const baseColors = { 'Supermarkt': [5, 150, 105], 'Online': [59, 130, 246], 'Frietjes': [234, 179, 8] };
     const buildDatasets = (cat) => jarenArray.map((jaar, index) => ({ label: jaar, data: (trendData[cat][jaar] || Array(12).fill(0)).slice(0, huidigeMaandIndex + 1), borderColor: `rgba(${baseColors[cat].join(',')}, ${index === 0 ? 1 : 0.5})`, borderWidth: index === 0 ? 3 : 2, fill: false, tension: 0.4 }));
     const baseOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } };
-    ['Sup', 'Onl', 'Kle', 'Fri'].forEach((s, i) => {
-        const cat = ['Supermarkt', 'Online', 'Kleren', 'Frietjes'][i];
+    
+    ['Sup', 'Fri', 'Onl'].forEach((s, i) => {
+        const cat = ['Supermarkt', 'Frietjes', 'Online'][i];
+        
+        let dataGeknipt = (trendData[cat][gekozenJaar] || Array(12).fill(0)).slice(0, huidigeMaandIndex + 1);
+        let somYTD = dataGeknipt.reduce((a, b) => a + b, 0);
+        if(document.getElementById('ytd-' + cat)) {
+            document.getElementById('ytd-' + cat).innerText = formatBedrag(somYTD);
+        }
+
         if (window['chart'+s]) window['chart'+s].destroy();
         window['chart'+s] = new Chart(document.getElementById('trend'+cat).getContext('2d'), { type: 'line', data: { labels: maandLabels, datasets: buildDatasets(cat) }, options: baseOptions });
     });

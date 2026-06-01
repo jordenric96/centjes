@@ -1,4 +1,4 @@
-// app.js - Financieel Dashboard - Volledig en Compleet (Marges, 4-5 bezoeken, Grafiek start 40%)
+// app.js - Financieel Dashboard - Volledig met Frietjes Tab
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -72,7 +72,7 @@ const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit
 
 let alleData = []; 
 let budgetData = []; 
-let mijnMaandGrafiek = null, mijnCatGrafiek = null, mijnBalansGrafiek = null, mijnYoYGrafiek = null, mijnSupPercGrafiek = null;
+let mijnMaandGrafiek = null, mijnCatGrafiek = null, mijnBalansGrafiek = null, mijnYoYGrafiek = null, mijnSupPercGrafiek = null, mijnFrietMaandGrafiek = null;
 
 let huidigDatum = new Date();
 let toonJaar = huidigDatum.getFullYear();
@@ -82,13 +82,16 @@ function switchView(viewName) {
     document.getElementById('view-dashboard').style.display = viewName === 'dashboard' ? 'block' : 'none';
     document.getElementById('view-weekbudget').style.display = viewName === 'weekbudget' ? 'block' : 'none';
     document.getElementById('view-supermarkt').style.display = viewName === 'supermarkt' ? 'block' : 'none';
+    document.getElementById('view-friet').style.display = viewName === 'friet' ? 'block' : 'none';
     
     document.getElementById('btn-tab-dash').className = viewName === 'dashboard' ? 'tab-btn active' : 'tab-btn';
     document.getElementById('btn-tab-week').className = viewName === 'weekbudget' ? 'tab-btn active' : 'tab-btn';
     document.getElementById('btn-tab-sup').className = viewName === 'supermarkt' ? 'tab-btn active' : 'tab-btn';
+    document.getElementById('btn-tab-friet').className = viewName === 'friet' ? 'tab-btn active' : 'tab-btn';
     
     if(viewName === 'weekbudget') { updateWeekbudgetUI(); }
     if(viewName === 'supermarkt') { updateSupermarktDash(); }
+    if(viewName === 'friet') { updateFrietDash(); }
 }
 
 function fetchCSV(url) {
@@ -316,6 +319,12 @@ function initialiseerDropdowns() {
         supMndSelect.innerHTML += `<option value="${i}">${m}</option>`; 
     });
 
+    const frietMndSelect = document.getElementById('frietFilterMaand');
+    frietMndSelect.innerHTML = '<option value="alle">Alle Maanden</option>';
+    maandenNaam.forEach((m, i) => { 
+        frietMndSelect.innerHTML += `<option value="${i}">${m}</option>`; 
+    });
+
     const hgSelect = document.getElementById('filterHoofdgroep');
     hgSelect.innerHTML = '<option value="alle">Alle Hoofdgroepen</option>';
     Object.keys(HOOFD_GROEPEN).sort().forEach(hg => { 
@@ -336,9 +345,12 @@ function initialiseerDropdowns() {
     
     document.getElementById('supFilterMaand').addEventListener('change', updateSupermarktDash);
     document.getElementById('jaarSelect').addEventListener('change', updateSupermarktDash);
+    document.getElementById('frietFilterMaand').addEventListener('change', updateFrietDash);
+    document.getElementById('jaarSelect').addEventListener('change', updateFrietDash);
 
     updateDashboard();
     updateSupermarktDash();
+    updateFrietDash();
 }
 
 function veranderWeek(delta) {
@@ -429,10 +441,112 @@ function updateWeekbudgetUI() {
             html += `<tr>
                 <td><strong>${item.datumStr}</strong></td>
                 <td><div class="omschrijving-cel" title="${item.naam}">${item.naam}</div></td>
-                <td class="tekst-negatief"><strong>${formatBedrag(item.bedrag)}</strong></td>
+                <td class="tekst-negatief" style="text-align:right;"><strong>${formatBedrag(item.bedrag)}</strong></td>
             </tr>`;
         });
         tbody.innerHTML = html;
+    }
+}
+
+// NIEUW: UPDATE FRIET DASHBOARD LOGICA
+function updateFrietDash() {
+    const gekozenJaar = document.getElementById('jaarSelect').value;
+    const fMaand = document.getElementById('frietFilterMaand').value; 
+    let frietData = [];
+    
+    alleData.forEach(rij => {
+        if(bepaalCategorie(rij) === 'Frietjes' && haalJaar(haalWaarde(rij, KOLOM_DATUM)) === gekozenJaar) {
+            let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
+            if(b < 0) { 
+                frietData.push({
+                    datumObj: parseDatumToDate(haalWaarde(rij, KOLOM_DATUM)),
+                    datumStr: haalWaarde(rij, KOLOM_DATUM).split(' ')[0],
+                    bedrag: Math.abs(b),
+                    winkel: schoonNaamOp(null, rij),
+                    ruweMaand: haalRuweMaand(haalWaarde(rij, KOLOM_DATUM))
+                });
+            }
+        }
+    });
+
+    let filteredData = frietData;
+    if (fMaand !== "alle") {
+        let m = parseInt(fMaand);
+        filteredData = frietData.filter(item => item.ruweMaand === m);
+    }
+
+    filteredData.sort((a, b) => a.datumObj - b.datumObj);
+
+    let totaalBedrag = 0;
+    let bezoeken = filteredData.length;
+    let duurste = 0;
+
+    let weekCounts = {}; 
+    let dagenVerschil = [];
+
+    for (let i = 0; i < filteredData.length; i++) {
+        let item = filteredData[i];
+        totaalBedrag += item.bedrag;
+        if (item.bedrag > duurste) duurste = item.bedrag;
+
+        let week = getISOWeek(item.datumObj);
+        weekCounts[week] = (weekCounts[week] || 0) + 1;
+
+        if (i > 0) {
+            let diffTime = Math.abs(item.datumObj - filteredData[i - 1].datumObj);
+            let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays > 0) {
+                dagenVerschil.push(diffDays);
+            }
+        }
+    }
+
+    let gemKosten = bezoeken > 0 ? totaalBedrag / bezoeken : 0;
+    let gemDagen = dagenVerschil.length > 0 ? dagenVerschil.reduce((a, b) => a + b, 0) / dagenVerschil.length : 0;
+
+    let freq1 = 0, freq2 = 0, freq3 = 0;
+    Object.values(weekCounts).forEach(count => {
+        if (count === 1) freq1++;
+        else if (count === 2) freq2++;
+        else if (count >= 3) freq3++;
+    });
+
+    document.getElementById('frietTotaal').innerText = formatBedrag(totaalBedrag);
+    document.getElementById('frietBezoeken').innerText = bezoeken;
+    document.getElementById('frietGemKosten').innerText = formatBedrag(gemKosten);
+    document.getElementById('frietGemDagen').innerText = gemDagen > 0 ? Math.round(gemDagen) + " dagen" : "-";
+    document.getElementById('frietDuurste').innerText = formatBedrag(duurste);
+
+    document.getElementById('friet1x').innerText = freq1 + "x";
+    document.getElementById('friet2x').innerText = freq2 + "x";
+    document.getElementById('friet3x').innerText = freq3 + "x";
+
+    let maandTotalen = Array(12).fill(0);
+    frietData.forEach(item => {
+        if (item.ruweMaand !== null) maandTotalen[item.ruweMaand] += item.bedrag;
+    });
+
+    if (window.mijnFrietMaandGrafiek) window.mijnFrietMaandGrafiek.destroy();
+    window.mijnFrietMaandGrafiek = new Chart(document.getElementById('frietMaandGrafiek').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'],
+            datasets: [{
+                label: 'Uitgaven Frituur',
+                data: maandTotalen,
+                backgroundColor: '#eab308',
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    let tabelData = [...filteredData].sort((a, b) => b.datumObj - a.datumObj);
+    let tb = document.getElementById('frietTransactiesBody');
+    if (tabelData.length === 0) {
+        tb.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px;">Geen frituurbezoeken gevonden.</td></tr>';
+    } else {
+        tb.innerHTML = tabelData.map(t => `<tr><td>${t.datumStr}</td><td><div class="omschrijving-cel" title="${t.winkel}">${t.winkel}</div></td><td class="tekst-negatief" style="text-align:right;"><strong>${formatBedrag(t.bedrag)}</strong></td></tr>`).join('');
     }
 }
 
@@ -475,7 +589,7 @@ function tekenSupPercGrafiek(gekozenJaar, supData) {
             maintainAspectRatio: false, 
             scales: { 
                 y: { 
-                    min: 40, // AANGEPAST: Begint bij 40%
+                    min: 40,
                     max: 100, 
                     beginAtZero: false,
                     ticks: { callback: function(value) { return value + '%'; } }
@@ -549,7 +663,6 @@ function updateSupermarktDash() {
         perWinkel[item.winkel] += item.bedrag;
     });
     
-    // AANGEPAST: BEREKEN BEZOEKEN PER DAG TOT 5+
     let count1 = 0, count2 = 0, count3 = 0, count4 = 0, count5plus = 0;
     Object.values(bezoekenPerDag).forEach(aantal => {
         if (aantal === 1) count1++;
@@ -594,7 +707,7 @@ function updateSupermarktDash() {
     } else {
         let th = '';
         supDataFiltered.forEach(t => {
-            th += `<tr><td>${t.datumStr}</td><td><div class="omschrijving-cel" title="${t.winkel}">${t.winkel}</div></td><td class="tekst-negatief"><strong>${formatBedrag(t.bedrag)}</strong></td></tr>`;
+            th += `<tr><td>${t.datumStr}</td><td><div class="omschrijving-cel" title="${t.winkel}">${t.winkel}</div></td><td class="tekst-negatief" style="text-align:right;"><strong>${formatBedrag(t.bedrag)}</strong></td></tr>`;
         });
         document.getElementById('supTransactiesBody').innerHTML = th;
     }
@@ -809,9 +922,9 @@ function verwerkData(data, huidigJaar) {
         trHoofd.style.cursor = 'pointer';
         trHoofd.innerHTML = `
             <td><span class="pijl-mnd">▶</span> <strong>${mNaam}</strong></td>
-            <td class="tekst-positief">${formatBedrag(md.in)}</td>
-            <td class="tekst-negatief">${formatBedrag(md.uit)}</td>
-            <td class="${mBalansKleur}"><strong>${formatBedrag(mBalans)}</strong></td>`;
+            <td class="tekst-positief" style="text-align:right;">${formatBedrag(md.in)}</td>
+            <td class="tekst-negatief" style="text-align:right;">${formatBedrag(md.uit)}</td>
+            <td class="${mBalansKleur}" style="text-align:right;"><strong>${formatBedrag(mBalans)}</strong></td>`;
         
         const trSub = document.createElement('tr');
         trSub.style.display = 'none';
@@ -1019,7 +1132,7 @@ function bouwTransactieTabel(data) {
         return; 
     }
     
-    thead.innerHTML = `<tr><th>Datum</th><th>Omschrijving</th><th>Bedrag</th><th>Groep</th><th>Cat</th></tr>`;
+    thead.innerHTML = `<tr><th>Datum</th><th>Omschrijving</th><th style="text-align:right;">Bedrag</th><th>Groep</th><th>Cat</th></tr>`;
     
     let html = '';
     data.slice(0, 150).forEach(rij => {
@@ -1034,7 +1147,7 @@ function bouwTransactieTabel(data) {
         html += `<tr>
             <td>${datumStr}</td>
             <td><div class="omschrijving-cel" title="${omschrijving}">${omschrijving}</div></td>
-            <td><span class="${kleurClass}"><strong>${formatBedrag(b)}</strong></span></td>
+            <td style="text-align:right;"><span class="${kleurClass}"><strong>${formatBedrag(b)}</strong></span></td>
             <td>${groep}</td>
             <td>${cat}</td>
         </tr>`;

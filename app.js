@@ -1,4 +1,4 @@
-// app.js - Financieel Dashboard - Volledig en Compleet
+// app.js - Financieel Dashboard - Volledig en Compleet met Supermarkt Bezoek-Teller
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -231,7 +231,6 @@ function bepaalHoofdgroep(sub) {
     return "Overig";
 }
 
-// AANGEPAST: Verwijdert altijd elke vorm van een minteken
 function formatBedrag(g) { 
     if (isNaN(g) || g === null) return "€ 0,00";
     return "€ " + Math.abs(g).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
@@ -530,14 +529,35 @@ function updateSupermarktDash() {
     tekenSupPercGrafiek(gekozenJaar, supDataGeheelJaar);
     
     let supDataFiltered = (fMaand !== "alle") ? supDataGeheelJaar.filter(item => item.ruweMaand === parseInt(fMaand)) : supDataGeheelJaar;
-    let uniekeDagen = new Set(), totaalBedrag = 0, perWinkel = {};
+    
+    let uniekeDagen = new Set();
+    let totaalBedrag = 0;
+    let perWinkel = {};
+    let bezoekenPerDag = {}; // NIEUW: Houdt aantal bezoeken per datum bij
     
     supDataFiltered.forEach(item => {
-        if(item.datumStr) uniekeDagen.add(item.datumStr);
+        if(item.datumStr) {
+            uniekeDagen.add(item.datumStr);
+            if (!bezoekenPerDag[item.datumStr]) bezoekenPerDag[item.datumStr] = 0;
+            bezoekenPerDag[item.datumStr]++;
+        }
+        
         totaalBedrag += item.bedrag;
+        
         if(!perWinkel[item.winkel]) perWinkel[item.winkel] = 0;
         perWinkel[item.winkel] += item.bedrag;
     });
+    
+    // BEREKEN BEZOEKEN PER DAG
+    let count1 = 0, count2 = 0, count3plus = 0;
+    Object.values(bezoekenPerDag).forEach(aantal => {
+        if (aantal === 1) count1++;
+        else if (aantal === 2) count2++;
+        else if (aantal >= 3) count3plus++;
+    });
+    document.getElementById('sup1Keer').innerText = count1 + "x";
+    document.getElementById('sup2Keer').innerText = count2 + "x";
+    document.getElementById('sup3Keer').innerText = count3plus + "x";
     
     let y = parseInt(gekozenJaar), m = (fMaand !== "alle") ? parseInt(fMaand) : -1, today = new Date();
     let daysInPeriod = 1;
@@ -777,6 +797,8 @@ function verwerkData(data, huidigJaar) {
         let mNaam = new Date(tmpD[0], parseInt(tmpD[1])-1, 1).toLocaleString('nl-BE', { month: 'short' });
         mNaam = mNaam.charAt(0).toUpperCase() + mNaam.slice(1) + ' ' + tmpD[0];
         
+        let mBalansKleur = mBalans >= 0 ? "tekst-positief" : "tekst-negatief";
+
         const trHoofd = document.createElement('tr');
         trHoofd.className = 'mnd-row';
         trHoofd.style.cursor = 'pointer';
@@ -784,7 +806,7 @@ function verwerkData(data, huidigJaar) {
             <td><span class="pijl-mnd">▶</span> <strong>${mNaam}</strong></td>
             <td class="tekst-positief">${formatBedrag(md.in)}</td>
             <td class="tekst-negatief">${formatBedrag(md.uit)}</td>
-            <td class="${mBalans >= 0 ? "tekst-positief" : "tekst-negatief"}"><strong>${formatBedrag(mBalans)}</strong></td>`;
+            <td class="${mBalansKleur}"><strong>${formatBedrag(mBalans)}</strong></td>`;
         
         const trSub = document.createElement('tr');
         trSub.style.display = 'none';

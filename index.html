@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financieel Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <link rel="apple-touch-icon" href="icon.png">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js" defer></script>
@@ -14,14 +19,11 @@
         .tab-btn { background: transparent; border: none; padding: 10px 20px; font-size: 1.1rem; font-weight: 700; color: #6b7280; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
         .tab-btn:hover { background: #f3f4f6; color: #1f2937; }
         .tab-btn.active { background: #1e3a8a; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        
         .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
         .week-nav button { padding: 8px 16px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-weight: 600; color: #374151; transition: background 0.2s; }
         .week-nav button:hover { background: #e5e7eb; }
         .week-titel { font-size: 1.2rem; font-weight: 800; color: #1e3a8a; margin: 0; text-align: center; }
-        
         .filter-select { padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-size: 0.9rem; color: #334155; background-color: #f8fafc; }
-        
         .trend-grid { display: grid; gap: 20px; grid-template-columns: 1fr; margin-bottom: 30px; }
         @media (min-width: 800px) { .trend-grid { grid-template-columns: 1fr 1fr; } }
     </style>
@@ -38,7 +40,7 @@
 
         <div class="tab-container">
             <button id="btn-tab-dash" class="tab-btn active" onclick="switchView('dashboard')">📊 Jaaroverzicht</button>
-            <button id="btn-tab-week" class="tab-btn" onclick="switchView('weekbudget')">🛒 Weekmenu (Supermarkt)</button>
+            <button id="btn-tab-week" class="tab-btn" onclick="switchView('weekbudget')">🛒 Weekmenu</button>
         </div>
 
         <div id="view-dashboard">
@@ -65,6 +67,13 @@
                     <p id="vastTotaal" class="bedrag negatief" style="font-size: 1.5rem;">€ 0.00</p>
                 </div>
             </section>
+            
+            <div class="content-grid" style="margin-bottom: 30px; display: block;">
+                <section class="card">
+                    <h3>Evolutie Netto Balans (Maand vs. Totaal)</h3>
+                    <div style="position: relative; height: 300px; width: 100%;"><canvas id="balansGrafiek"></canvas></div>
+                </section>
+            </div>
 
             <div class="content-grid" style="margin-bottom: 30px;">
                 <section class="card">
@@ -107,7 +116,7 @@
                     </div>
                 </section>
                 <section class="card">
-                    <h3>Uitgaven Analyse (Klik voor details)</h3>
+                    <h3>Uitgaven Analyse</h3>
                     <div class="tabel-wrapper">
                         <table id="drillDownTable">
                             <thead><tr><th>Groep / Sub-categorie</th><th style="text-align: right;">Totaal</th></tr></thead>
@@ -119,29 +128,21 @@
 
             <section class="card" style="margin-top: 30px;">
                 <h3 style="margin-bottom: 10px;">Banktransacties</h3>
-                
                 <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px; flex-wrap: wrap; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; flex-grow: 1;">
                         <select id="filterMaand" class="filter-select"></select>
                         <select id="filterHoofdgroep" class="filter-select"></select>
                         <select id="filterCategorie" class="filter-select"></select>
                     </div>
-
                     <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
                         <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">
-                            Sorteren: 
-                            <select id="sorteerSelect" class="filter-select" style="margin-left: 5px;">
-                                <option value="datum">Nieuwste eerst</option>
-                                <option value="uitgaven">Grootste uitgave</option>
-                            </select>
+                            Sorteren: <select id="sorteerSelect" class="filter-select" style="margin-left: 5px;"><option value="datum">Nieuwste eerst</option><option value="uitgaven">Grootste uitgave</option></select>
                         </label>
-
                         <label style="cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #d35400; background: #ffeedd; padding: 6px 12px; border-radius: 6px;">
                             <input type="checkbox" id="toonEnkelOverig" style="margin-right: 5px;"> Enkel "Overig"
                         </label>
                     </div>
                 </div>
-
                 <div class="tabel-wrapper grote-tabel">
                     <table id="dataTable">
                         <thead id="tableHead"></thead>
@@ -157,7 +158,6 @@
                 <div id="week-titel" class="week-titel">Week --, 2026</div>
                 <button onclick="veranderWeek(1)">Volgende ▶</button>
             </div>
-
             <section class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 25px;">
                 <div class="card totaal-card">
                     <h3 style="color: #dc2626;">Werkelijk Uitgegeven</h3>
@@ -170,25 +170,24 @@
                     <p id="maandUitgegevenTonen" class="bedrag negatief">€ 0.00</p>
                 </div>
             </section>
-
             <section class="card">
                 <h3 style="margin-bottom: 15px;">Transacties van deze week</h3>
                 <div class="tabel-wrapper grote-tabel">
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Datum</th>
-                                <th>Tegenpartij / Omschrijving</th>
-                                <th>Bedrag</th>
-                            </tr>
-                        </thead>
-                        <tbody id="weekTransactiesBody">
-                        </tbody>
+                        <thead><tr><th>Datum</th><th>Tegenpartij / Omschrijving</th><th>Bedrag</th></tr></thead>
+                        <tbody id="weekTransactiesBody"></tbody>
                     </table>
                 </div>
             </section>
         </div>
-
     </div>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js');
+            });
+        }
+    </script>
 </body>
 </html>

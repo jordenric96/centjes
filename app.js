@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Foodcompany fix, 180 limiet & Spaardoel vanaf 1 juni)
+// app.js - Financiële Dashboard (Anti-NaN fix, 180 limiet & Spaardoel vanaf 1 juni)
 
 const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
 const budgetSheetUrl = ""; 
@@ -87,22 +87,42 @@ Papa.parse(sheetUrl, {
         alleData = results.data;
         document.getElementById('status').innerText = `Bank verbonden (${alleData.length} transacties)`;
         document.getElementById('status').classList.add('succes');
-        if (budgetSheetUrl !== "") {
-            Papa.parse(budgetSheetUrl, {
-                download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
-                complete: function(budgetRes) { budgetData = budgetRes.data; initialiseerDropdowns(); },
-                error: function() { initialiseerDropdowns(); } 
-            });
-        } else {
-            initialiseerDropdowns();
-        }
+        initialiseerDropdowns();
     }
 });
+
+// ROBUUSTE UITLEZING: Haalt veilig kolommen op, zelfs als Google Sheets ze iets anders noemt (zoals met spaties)
+function haalWaarde(rij, kolomMatch) {
+    if (rij[kolomMatch] !== undefined) return rij[kolomMatch];
+    for (let k in rij) {
+        if (k.toLowerCase().includes(kolomMatch.toLowerCase())) return rij[k];
+    }
+    return undefined;
+}
+
+// SLIMME REKENMACHINE: Vangt alle komma's, punten, foutjes op zodat NaN onmogelijk is.
+function parseBedragNumber(val) {
+    if (val === null || val === undefined || val === '') return NaN;
+    if (typeof val === 'number') return val;
+    let str = String(val).trim().replace(/[€\s]/g, '');
+    if (str.includes('.') && str.includes(',')) {
+        str = str.replace(/\./g, '').replace(',', '.');
+    } else if (str.includes(',')) {
+        str = str.replace(',', '.');
+    }
+    return parseFloat(str);
+}
 
 function parseDatumToDate(datumStr) {
     if (!datumStr) return null;
     const parts = String(datumStr).split(/[-/]/);
-    if (parts.length === 3) return parts[0].length === 4 ? new Date(parts[0], parts[1]-1, parts[2]) : new Date(parts[2], parts[1]-1, parts[0]);
+    if (parts.length === 3) {
+        let y = parts[0].length === 4 ? parts[0] : parts[2];
+        let d = parts[0].length === 4 ? parts[2] : parts[0];
+        let m = parts[1];
+        let date = new Date(y, m-1, d);
+        if (!isNaN(date.getTime())) return date;
+    }
     return null;
 }
 
@@ -133,20 +153,32 @@ function getDateOfISOWeek(w, y) {
 function haalJaar(datumStr) {
     if (!datumStr) return "Onbekend";
     const parts = String(datumStr).split(/[-/]/);
-    if (parts.length >= 3) return parts[0].length === 4 ? parts[0] : parts[2];
+    if (parts.length >= 3) {
+        let j = parts[0].length === 4 ? parts[0] : parts[2];
+        if(!isNaN(parseInt(j))) return j;
+    }
     return "Onbekend";
 }
 
 function haalRuweMaand(datumStr) {
     if (!datumStr) return null;
     const parts = String(datumStr).split(/[-/]/);
-    if (parts.length >= 3) return parseInt(parts[1]) - 1;
+    if (parts.length >= 3) {
+        let m = parseInt(parts[1]) - 1;
+        if(!isNaN(m)) return m;
+    }
     return null;
 }
 
 function bepaalCategorie(rij) {
     if (rij["Eigen Categorie"] && String(rij["Eigen Categorie"]).trim() !== "") return String(rij["Eigen Categorie"]).trim();
-    const tekst = `${rij[KOLOM_TEGENPARTIJ] || ''} ${rij[KOLOM_MEDEDELING] || ''} ${rij[KOLOM_DETAILS] || ''} ${rij[KOLOM_TYPE] || ''}`.toLowerCase();
+    
+    let tp = haalWaarde(rij, KOLOM_TEGENPARTIJ) || '';
+    let md = haalWaarde(rij, KOLOM_MEDEDELING) || '';
+    let dt = haalWaarde(rij, KOLOM_DETAILS) || '';
+    let ty = haalWaarde(rij, KOLOM_TYPE) || '';
+    
+    const tekst = `${tp} ${md} ${dt} ${ty}`.toLowerCase();
     for (const [cat, words] of Object.entries(CATEGORIE_RULES)) {
         for (const w of words) if (tekst.includes(w.toLowerCase())) return cat;
     }
@@ -158,13 +190,21 @@ function bepaalHoofdgroep(sub) {
     return "Overig";
 }
 
-function formatBedrag(g) { return "€ " + Math.abs(g).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+// Zorgt dat NaN wordt omgevormd naar een propere € 0.00 als vangnet
+function formatBedrag(g) { 
+    if (isNaN(g) || g === null) return "€ 0.00";
+    return "€ " + Math.abs(g).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
+}
 
 function schoonNaamOp(rij) {
+    let tp = haalWaarde(rij, KOLOM_TEGENPARTIJ) || '';
+    let md = haalWaarde(rij, KOLOM_MEDEDELING) || '';
+    let dt = haalWaarde(rij, KOLOM_DETAILS) || '';
+    
     let parts = [];
-    if (rij[KOLOM_TEGENPARTIJ]) parts.push(String(rij[KOLOM_TEGENPARTIJ]).trim());
-    if (rij[KOLOM_MEDEDELING]) parts.push(String(rij[KOLOM_MEDEDELING]).trim());
-    if (rij[KOLOM_DETAILS]) parts.push(String(rij[KOLOM_DETAILS]).trim());
+    if (tp) parts.push(String(tp).trim());
+    if (md) parts.push(String(md).trim());
+    if (dt) parts.push(String(dt).trim());
     let t = parts.join(" ");
 
     let tl = t.toLowerCase();
@@ -192,7 +232,10 @@ function schoonNaamOp(rij) {
 
 function initialiseerDropdowns() {
     const jarenSet = new Set();
-    alleData.forEach(rij => { const jaar = haalJaar(rij[KOLOM_DATUM]); if (jaar !== "Onbekend") jarenSet.add(jaar); });
+    alleData.forEach(rij => { 
+        const jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM)); 
+        if (jaar !== "Onbekend") jarenSet.add(jaar); 
+    });
     const jaarSelect = document.getElementById('jaarSelect');
     jaarSelect.innerHTML = ''; 
     Array.from(jarenSet).sort().reverse().forEach(j => { jaarSelect.innerHTML += `<option value="${j}">${j}</option>`; });
@@ -242,21 +285,23 @@ function updateWeekbudgetUI() {
     
     alleData.forEach(rij => {
         if(bepaalCategorie(rij) !== 'Supermarkt') return;
-        let bedrag = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
+        
+        let bedrag = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
         if(isNaN(bedrag) || bedrag >= 0) return; 
         
-        let rijJaar = parseInt(haalJaar(rij[KOLOM_DATUM]));
-        let rijMaand = haalRuweMaand(rij[KOLOM_DATUM]);
+        let rijJaar = parseInt(haalJaar(haalWaarde(rij, KOLOM_DATUM)));
+        let rijMaand = haalRuweMaand(haalWaarde(rij, KOLOM_DATUM));
         if (rijJaar === doelJaar && rijMaand === doelMaand) totaalMaandUitgegeven += Math.abs(bedrag);
         
-        const d = parseDatumToDate(rij[KOLOM_DATUM]);
+        const d = parseDatumToDate(haalWaarde(rij, KOLOM_DATUM));
         if(d && getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
             totaalUitgegeven += Math.abs(bedrag);
-            gecombineerdeLijst.push({ datumObj: d, datumStr: rij[KOLOM_DATUM], naam: schoonNaamOp(rij), bedrag: Math.abs(bedrag) });
+            gecombineerdeLijst.push({ datumObj: d, datumStr: haalWaarde(rij, KOLOM_DATUM), naam: schoonNaamOp(rij), bedrag: Math.abs(bedrag) });
         }
     });
     
-    let uitgavenKleur = totaalUitgegeven < 180 ? 'bedrag positief' : 'bedrag negatief';
+    // GROEN als uitgaven ONDER OF GELIJK AAN 180 is. Anders ROOD.
+    let uitgavenKleur = totaalUitgegeven <= 180 ? 'bedrag positief' : 'bedrag negatief';
     let tonenEl = document.getElementById('weekUitgegevenTonen');
     tonenEl.innerText = formatBedrag(totaalUitgegeven);
     tonenEl.className = uitgavenKleur;
@@ -270,7 +315,7 @@ function updateWeekbudgetUI() {
 
 function updateDashboard() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
-    const jaardata = alleData.filter(rij => haalJaar(rij[KOLOM_DATUM]) === gekozenJaar);
+    const jaardata = alleData.filter(rij => haalJaar(haalWaarde(rij, KOLOM_DATUM)) === gekozenJaar);
     verwerkData(jaardata, gekozenJaar);
     bouwTrendGrafieken(); 
     
@@ -281,18 +326,17 @@ function updateDashboard() {
     
     if (document.getElementById('toonEnkelOverig').checked) tabelData = tabelData.filter(rij => bepaalCategorie(rij) === "Overig");
     else {
-        if (fMaand !== "alle") tabelData = tabelData.filter(rij => haalRuweMaand(rij[KOLOM_DATUM]) === parseInt(fMaand));
+        if (fMaand !== "alle") tabelData = tabelData.filter(rij => haalRuweMaand(haalWaarde(rij, KOLOM_DATUM)) === parseInt(fMaand));
         if (fHoofd !== "alle") tabelData = tabelData.filter(rij => bepaalHoofdgroep(bepaalCategorie(rij)) === fHoofd);
         if (fCat !== "alle") tabelData = tabelData.filter(rij => bepaalCategorie(rij) === fCat);
     }
     
     tabelData.sort((a, b) => {
-        let bedragA = a[KOLOM_BEDRAG]; let bedragB = b[KOLOM_BEDRAG];
-        if (typeof bedragA === 'string') bedragA = parseFloat(bedragA.replace(',', '.'));
-        if (typeof bedragB === 'string') bedragB = parseFloat(bedragB.replace(',', '.'));
+        let bedragA = parseBedragNumber(haalWaarde(a, KOLOM_BEDRAG)); 
+        let bedragB = parseBedragNumber(haalWaarde(b, KOLOM_BEDRAG));
         bedragA = isNaN(bedragA) ? 0 : bedragA; bedragB = isNaN(bedragB) ? 0 : bedragB;
         if (document.getElementById('sorteerSelect').value === "uitgaven") return bedragA - bedragB;
-        return parseDatumToDate(b[KOLOM_DATUM]) - parseDatumToDate(a[KOLOM_DATUM]);
+        return parseDatumToDate(haalWaarde(b, KOLOM_DATUM)) - parseDatumToDate(haalWaarde(a, KOLOM_DATUM));
     });
     bouwTransactieTabel(tabelData);
 }
@@ -301,22 +345,25 @@ function verwerkData(data, huidigJaar) {
     let inkomsten = 0, uitgaven = 0, vast = 0;
     let spaarBalansVanafJuni = 0; 
     let actueelJaar = parseInt(huidigJaar);
-    let startDatumSpaardoel = new Date(actueelJaar, 5, 1); // 1 juni is index 5
+    let startDatumSpaardoel = new Date(actueelJaar, 5, 1); // 1 JUNI als reset-punt
 
     const maanden = {}, cats = {}, groepen = {}, hgBreakdown = {};
     
     data.forEach(r => {
-        let b = typeof r[KOLOM_BEDRAG] === 'string' ? parseFloat(r[KOLOM_BEDRAG].replace(',','.')) : r[KOLOM_BEDRAG];
+        let b = parseBedragNumber(haalWaarde(r, KOLOM_BEDRAG));
         if (isNaN(b)) return;
 
-        const d = parseDatumToDate(r[KOLOM_DATUM]);
-        // Telt enkel mee voor het spaardoel als de datum op of na 1 juni valt
+        const d = parseDatumToDate(haalWaarde(r, KOLOM_DATUM));
+        // START VANAF 1 JUNI VOOR HET SPAARDOEL
         if (d && d.getTime() >= startDatumSpaardoel.getTime()) {
             spaarBalansVanafJuni += b;
         }
 
-        const cat = bepaalCategorie(r), hg = bepaalHoofdgroep(cat), dParts = String(r[KOLOM_DATUM]).split(/[-/]/);
-        let m = (dParts.length >= 3) ? (dParts[0].length === 4 ? `${dParts[0]}-${dParts[1]}` : `${dParts[2]}-${dParts[1]}`) : "Onbekend";
+        const cat = bepaalCategorie(r), hg = bepaalHoofdgroep(cat), datumVal = haalWaarde(r, KOLOM_DATUM);
+        let jaar = haalJaar(datumVal);
+        let maandNum = haalRuweMaand(datumVal);
+        let m = (jaar !== "Onbekend" && maandNum !== null) ? `${jaar}-${String(maandNum + 1).padStart(2, '0')}` : "Onbekend";
+        
         if (!maanden[m]) maanden[m] = { in: 0, uit: 0 };
         
         if (b > 0) { inkomsten += b; maanden[m].in += b; } 
@@ -440,11 +487,11 @@ function bouwTrendGrafieken() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
 
     alleData.forEach(rij => {
-        let b = typeof rij[KOLOM_BEDRAG] === 'string' ? parseFloat(rij[KOLOM_BEDRAG].replace(',','.')) : rij[KOLOM_BEDRAG];
+        let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
         if (isNaN(b) || b >= 0) return; 
         const cat = bepaalCategorie(rij);
         if (['Supermarkt', 'Online', 'Frietjes'].includes(cat)) {
-            let jaar = haalJaar(rij[KOLOM_DATUM]), maand = haalRuweMaand(rij[KOLOM_DATUM]);
+            let jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM)), maand = haalRuweMaand(haalWaarde(rij, KOLOM_DATUM));
             if (jaar !== "Onbekend" && maand !== null) { jarenSet.add(jaar); if (!trendData[cat][jaar]) trendData[cat][jaar] = Array(12).fill(0); trendData[cat][jaar][maand] += Math.abs(b); }
         }
     });
@@ -471,5 +518,8 @@ function bouwTrendGrafieken() {
 function bouwTransactieTabel(data) {
     if(data.length === 0) { document.getElementById('tableHead').innerHTML = ''; document.getElementById('tableBody').innerHTML = '<tr><td style="padding: 20px; text-align: center;">Geen transacties.</td></tr>'; return; }
     document.getElementById('tableHead').innerHTML = `<tr><th>Datum</th><th>Omschrijving</th><th>Bedrag</th><th>Groep</th><th>Cat</th></tr>`;
-    document.getElementById('tableBody').innerHTML = data.slice(0, 150).map(rij => `<tr><td>${rij[KOLOM_DATUM]}</td><td><div class="omschrijving-cel" title="${schoonNaamOp(rij)}">${schoonNaamOp(rij)}</div></td><td><span class="${rij[KOLOM_BEDRAG]>0?'tekst-positief':'tekst-negatief'}"><strong>${formatBedrag(rij[KOLOM_BEDRAG])}</strong></span></td><td>${bepaalHoofdgroep(bepaalCategorie(rij))}</td><td>${bepaalCategorie(rij)}</td></tr>`).join('');
+    document.getElementById('tableBody').innerHTML = data.slice(0, 150).map(rij => {
+        let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
+        return `<tr><td>${haalWaarde(rij, KOLOM_DATUM)}</td><td><div class="omschrijving-cel" title="${schoonNaamOp(rij)}">${schoonNaamOp(rij)}</div></td><td><span class="${b>0?'tekst-positief':'tekst-negatief'}"><strong>${formatBedrag(b)}</strong></span></td><td>${bepaalHoofdgroep(bepaalCategorie(rij))}</td><td>${bepaalCategorie(rij)}</td></tr>`
+    }).join('');
 }

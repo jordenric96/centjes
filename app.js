@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Geen icoontjes, alles strak gegroepeerd)
+// app.js - Financiële Dashboard (Sparen Genegeerd + Slimme Inzichten + YoY Grafiek)
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -71,7 +71,7 @@ const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit
 
 let alleData = []; 
 let budgetData = []; 
-let mijnMaandGrafiek = null, mijnCatGrafiek = null, mijnBalansGrafiek = null;
+let mijnMaandGrafiek = null, mijnCatGrafiek = null, mijnBalansGrafiek = null, mijnYoYGrafiek = null;
 
 let huidigDatum = new Date();
 let toonJaar = huidigDatum.getFullYear();
@@ -236,10 +236,8 @@ function formatBedrag(g) {
     return "€ " + Math.abs(g).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
 }
 
-// Centrale schoonmaak-functie (Hier zorgen we dat de manuele invoer ook netjes past!)
 function schoonNaamOp(naamInput, rij = null) {
     let t = "";
-    
     if (rij !== null) {
         let tp = haalWaarde(rij, KOLOM_TEGENPARTIJ) || '';
         let md = haalWaarde(rij, KOLOM_MEDEDELING) || '';
@@ -257,7 +255,6 @@ function schoonNaamOp(naamInput, rij = null) {
     
     if (tl.includes("ricour-de bruyn") || tl.includes("ricour noe")) return "Sparen (Intern)";
     if (tl.includes("disneyland")) return "Disneyland Kinderopvang";
-    
     if (tl.includes("schelck") || tl.includes("huwaert") || tl.includes("delhaize")) return "Delhaize";
     if (tl.includes("okay")) return "Okay";
     if (tl.includes("kruidvat")) return "Kruidvat";
@@ -274,7 +271,6 @@ function schoonNaamOp(naamInput, rij = null) {
     if (tl.includes("carrefour")) return "Carrefour";
     if (tl.includes("mcdonald")) return "McDonald's";
     
-    // Als het geen bekende winkel is, rommel eruit filteren:
     t = t.replace(/BETALING MET DEBETKAART NUMMER\s+[\d\sX*]{15,30}/gi, ''); 
     t = t.replace(/BANCONTACT BANKREFERENTIE\s*:\s*[A-Z0-9\-]+/gi, '');
     t = t.replace(/VALUTADATUM\s*:\s*\d{2}\/\d{2}\/\d{4}/gi, '');
@@ -289,8 +285,6 @@ function schoonNaamOp(naamInput, rij = null) {
     t = t.replace(/^[-:/,]+|[-:/,]+$/g, '').trim();
     
     if (t.length < 2) return "Transactie (Geen details)";
-    
-    // Zorgt ervoor dat handmatig ingegeven "Okay" netjes met een hoofdletter O wordt getoond
     return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
@@ -375,8 +369,7 @@ function updateWeekbudgetUI() {
         budgetData.forEach(rij => {
             let dStr = haalWaarde(rij, 'datum') || haalWaarde(rij, 'tijdstempel'); 
             let bStr = haalWaarde(rij, 'bedrag'); 
-            let ruweWinkel = haalWaarde(rij, 'winkel') || 'Handmatige bon';
-            let winkel = schoonNaamOp(ruweWinkel); // We sturen de handmatige input óók door de schoonmaakmachine!
+            let winkel = schoonNaamOp(haalWaarde(rij, 'winkel') || 'Handmatige bon');
             
             if (!dStr || bStr == null) return;
             let bedrag = parseBedragNumber(bStr);
@@ -430,8 +423,7 @@ function updateSupermarktDash() {
         if(isNaN(bedrag)) return;
         let d = parseDatumToDate(String(dStr));
         
-        let ruweWinkel = haalWaarde(rij, 'winkel') || 'Handmatige bon';
-        let winkel = schoonNaamOp(ruweWinkel);
+        let winkel = schoonNaamOp(haalWaarde(rij, 'winkel') || 'Handmatige bon');
 
         if(d && String(d.getFullYear()) === gekozenJaar) {
             supData.push({
@@ -503,8 +495,11 @@ function updateSupermarktDash() {
 function updateDashboard() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
     const jaardata = alleData.filter(rij => haalJaar(haalWaarde(rij, KOLOM_DATUM)) === gekozenJaar);
+    
     verwerkData(jaardata, gekozenJaar);
     bouwTrendGrafieken(); 
+    bouwYoYGrafiek(gekozenJaar);
+    bouwSlimmeInzichten();
     
     let tabelData = [...jaardata];
     const fMaand = document.getElementById('filterMaand').value;
@@ -528,6 +523,124 @@ function updateDashboard() {
     bouwTransactieTabel(tabelData);
 }
 
+// NIEUW: BOUW JAAR OP JAAR (YoY) GRAFIEK
+function bouwYoYGrafiek(gekozenJaar) {
+    if (window.mijnYoYGrafiek) window.mijnYoYGrafiek.destroy();
+    let jaarNu = parseInt(gekozenJaar);
+    let jaarVorige = jaarNu - 1;
+
+    let dataNu = Array(12).fill(0);
+    let dataVorige = Array(12).fill(0);
+
+    alleData.forEach(r => {
+        let cat = bepaalCategorie(r);
+        if (cat === "Sparen & Intern") return; // Negeer sparen
+        
+        let b = parseBedragNumber(haalWaarde(r, KOLOM_BEDRAG));
+        if (isNaN(b) || b >= 0) return; // Alleen uitgaven
+
+        let j = parseInt(haalJaar(haalWaarde(r, KOLOM_DATUM)));
+        let m = haalRuweMaand(haalWaarde(r, KOLOM_DATUM));
+
+        if (j === jaarNu && m !== null) dataNu[m] += Math.abs(b);
+        if (j === jaarVorige && m !== null) dataVorige[m] += Math.abs(b);
+    });
+
+    let huidigeDatum = new Date();
+    if (jaarNu === huidigeDatum.getFullYear()) {
+        for (let i = huidigeDatum.getMonth() + 1; i < 12; i++) {
+            dataNu[i] = null; // Laat lijn stoppen in de toekomst
+        }
+    }
+
+    const maandLabels = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+    
+    window.mijnYoYGrafiek = new Chart(document.getElementById('yoyGrafiek').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: maandLabels,
+            datasets: [
+                { label: `${jaarNu}`, data: dataNu, borderColor: '#1e3a8a', backgroundColor: '#1e3a8a', borderWidth: 3, tension: 0.4 },
+                { label: `${jaarVorige}`, data: dataVorige, borderColor: '#94a3b8', borderDash: [5, 5], borderWidth: 2, tension: 0.4, fill: false }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, spanGaps: false }
+    });
+}
+
+// NIEUW: SLIMME INZICHTEN ALGORITME
+function bouwSlimmeInzichten() {
+    let huidigeDatum = new Date();
+    // We kijken naar de 1e van de huidige maand om maanden terug te tellen
+    let dNu = new Date(huidigeDatum.getFullYear(), huidigeDatum.getMonth(), 1);
+    
+    let uitgavenNu = {};
+    let uitgavenOud = {}; 
+
+    alleData.forEach(r => {
+        let cat = bepaalCategorie(r);
+        // Focus puur op de variabele/vrije uitgaven. Sparen en Vaste kosten uitgesloten.
+        if (cat === "Sparen & Intern" || VASTE_CATEGORIEEN.includes(cat)) return; 
+        
+        let b = parseBedragNumber(haalWaarde(r, KOLOM_BEDRAG));
+        if (isNaN(b) || b >= 0) return; 
+
+        let d = parseDatumToDate(haalWaarde(r, KOLOM_DATUM));
+        if (!d) return;
+
+        let monthsDiff = (dNu.getFullYear() - d.getFullYear()) * 12 + (dNu.getMonth() - d.getMonth());
+
+        if (monthsDiff === 0) {
+            if (!uitgavenNu[cat]) uitgavenNu[cat] = 0;
+            uitgavenNu[cat] += Math.abs(b);
+        } else if (monthsDiff > 0 && monthsDiff <= 6) {
+            if (!uitgavenOud[cat]) uitgavenOud[cat] = 0;
+            uitgavenOud[cat] += Math.abs(b);
+        }
+    });
+
+    let inzichten = [];
+    let alleCats = new Set([...Object.keys(uitgavenNu), ...Object.keys(uitgavenOud)]);
+
+    alleCats.forEach(cat => {
+        let nu = uitgavenNu[cat] || 0;
+        let gemOud = (uitgavenOud[cat] || 0) / 6; 
+        
+        if (gemOud > 10 || nu > 10) { 
+            let verschil = nu - gemOud;
+            let perc = gemOud > 0 ? (verschil / gemOud) * 100 : 100;
+            inzichten.push({ cat: cat, nu: nu, gemOud: gemOud, verschil: verschil, perc: perc });
+        }
+    });
+
+    inzichten.sort((a, b) => b.verschil - a.verschil); 
+
+    let html = '';
+    if (inzichten.length > 0) {
+        let stijger = inzichten[0];
+        if (stijger.verschil > 20) {
+            html += `<div style="padding: 12px; background: #fee2e2; border-left: 4px solid #ef4444; border-radius: 6px; margin-bottom: 10px;">
+                <strong style="color: #b91c1c;">Let op: ${stijger.cat}</strong><br>
+                Je gaf deze maand <strong>${formatBedrag(stijger.nu)}</strong> uit. Dat is <strong>${formatBedrag(stijger.verschil)} méér</strong> dan je normale gemiddelde (${formatBedrag(stijger.gemOud)}).
+            </div>`;
+        }
+
+        let daler = inzichten[inzichten.length - 1];
+        if (daler.verschil < -20) {
+            html += `<div style="padding: 12px; background: #d1fae5; border-left: 4px solid #10b981; border-radius: 6px;">
+                <strong style="color: #047857;">Goed bezig: ${daler.cat}</strong><br>
+                Je gaf deze maand nog maar <strong>${formatBedrag(daler.nu)}</strong> uit. Dat is <strong>${formatBedrag(Math.abs(daler.verschil))} mínder</strong> dan normaal (${formatBedrag(daler.gemOud)}).
+            </div>`;
+        }
+    }
+
+    if (html === '') {
+        html = '<p style="color: #64748b; font-style: italic;">Je uitgavenpatroon loopt momenteel mooi gelijk met je gemiddelde. Er zijn nog geen grote uitschieters deze maand!</p>';
+    }
+    
+    document.getElementById('inzichtenBody').innerHTML = html;
+}
+
 function verwerkData(data, huidigJaar) {
     let inkomsten = 0, uitgaven = 0, vast = 0;
     let spaarBalansVanafJuni = 0; 
@@ -543,7 +656,11 @@ function verwerkData(data, huidigJaar) {
         const d = parseDatumToDate(haalWaarde(r, KOLOM_DATUM));
         if (d && d.getTime() >= startDatumSpaardoel.getTime()) { spaarBalansVanafJuni += b; }
 
-        const cat = bepaalCategorie(r), hg = bepaalHoofdgroep(cat), datumVal = haalWaarde(r, KOLOM_DATUM);
+        const cat = bepaalCategorie(r);
+        const hg = bepaalHoofdgroep(cat);
+        const datumVal = haalWaarde(r, KOLOM_DATUM);
+        let isSparen = (cat === "Sparen & Intern");
+
         let jaar = haalJaar(datumVal);
         let maandNum = haalRuweMaand(datumVal);
         let m = (jaar !== "Onbekend" && maandNum !== null) ? `${jaar}-${String(maandNum + 1).padStart(2, '0')}` : "Onbekend";
@@ -551,25 +668,33 @@ function verwerkData(data, huidigJaar) {
         if (!maanden[m]) maanden[m] = { in: 0, uit: 0 };
         
         if (b > 0) { 
-            inkomsten += b; maanden[m].in += b; 
-        } else {
-            uitgaven += b; maanden[m].uit += b;
-            
-            if (VASTE_CATEGORIEEN.includes(cat)) {
-                vast += Math.abs(b);
-            } else if (cat !== "Sparen & Intern") {
-                let winkelNaam = schoonNaamOp(null, r);
-                if (winkelNaam !== "Transactie (Geen details)" && winkelNaam !== "Sparen (Intern)") {
-                    if (!top5Data[winkelNaam]) top5Data[winkelNaam] = 0;
-                    top5Data[winkelNaam] += Math.abs(b);
-                }
+            // Inkomsten
+            if (!isSparen) { 
+                inkomsten += b; 
+                maanden[m].in += b; 
             }
+        } else {
+            // Uitgaven - SPAREN VOLLEDIG GENEGEERD!
+            if (!isSparen) {
+                uitgaven += b; 
+                maanden[m].uit += b;
+                
+                if (VASTE_CATEGORIEEN.includes(cat)) {
+                    vast += Math.abs(b);
+                } else {
+                    let winkelNaam = schoonNaamOp(null, r);
+                    if (winkelNaam !== "Transactie (Geen details)") {
+                        if (!top5Data[winkelNaam]) top5Data[winkelNaam] = 0;
+                        top5Data[winkelNaam] += Math.abs(b);
+                    }
+                }
 
-            if (!cats[cat]) cats[cat] = 0; cats[cat] += Math.abs(b);
-            if (!groepen[hg]) groepen[hg] = 0; groepen[hg] += Math.abs(b);
-            if (!hgBreakdown[hg]) hgBreakdown[hg] = {};
-            if (!hgBreakdown[hg][cat]) hgBreakdown[hg][cat] = 0;
-            hgBreakdown[hg][cat] += Math.abs(b);
+                if (!cats[cat]) cats[cat] = 0; cats[cat] += Math.abs(b);
+                if (!groepen[hg]) groepen[hg] = 0; groepen[hg] += Math.abs(b);
+                if (!hgBreakdown[hg]) hgBreakdown[hg] = {};
+                if (!hgBreakdown[hg][cat]) hgBreakdown[hg][cat] = 0;
+                hgBreakdown[hg][cat] += Math.abs(b);
+            }
         }
     });
     

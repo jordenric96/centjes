@@ -81,7 +81,6 @@
                 <h1>Dashboard</h1>
                 <div id="status" class="status-badge">Gegevens ophalen...</div>
             </div>
-            <!-- Algemene Jaar Filter die voor het hele dashboard geldt -->
             <div class="filter-row" style="margin-bottom: 15px;">
                 <select id="jaarSelect" class="filter-select"></select>
             </div>
@@ -178,7 +177,7 @@
                     <h3 style="margin-top: 0;">Top 5 Winkels (Variabel)</h3>
                     <div class="tabel-wrapper">
                         <table id="top5Table">
-                            <thead><tr><th>Winkel</th><th style="text-align: right;">Bedrag</th></tr></thead>
+                            <thead><tr><th>Winkel</th><th style="text-align: right; width: 35%;">Bedrag</th></tr></thead>
                             <tbody id="top5Body"></tbody>
                         </table>
                     </div>
@@ -237,14 +236,13 @@
                 <h3 style="margin-top: 0;">Transacties deze week</h3>
                 <div class="tabel-wrapper">
                     <table>
-                        <thead><tr><th>Datum</th><th>Tegenpartij / Omschrijving</th><th>Bedrag</th></tr></thead>
+                        <thead><tr><th>Datum</th><th>Winkel</th><th style="width: 30%;">Bedrag</th></tr></thead>
                         <tbody id="weekTransactiesBody"></tbody>
                     </table>
                 </div>
             </section>
         </div>
 
-        <!-- NIEUW: SUPERMARKT TABBLAD -->
         <div id="view-supermarkt" style="display: none;">
             <div class="filter-row" style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
                 <select id="supFilterMaand" class="filter-select"></select>
@@ -270,7 +268,7 @@
                     <h3 style="margin-top: 0;">Uitgaven per Winkel</h3>
                     <div class="tabel-wrapper">
                         <table>
-                            <thead><tr><th>Winkel</th><th style="text-align: right;">Bedrag</th></tr></thead>
+                            <thead><tr><th>Winkel</th><th style="text-align: right; width: 35%;">Bedrag</th></tr></thead>
                             <tbody id="supWinkelBody"></tbody>
                         </table>
                     </div>
@@ -280,7 +278,7 @@
                     <h3 style="margin-top: 0;">Alle Transacties</h3>
                     <div class="tabel-wrapper">
                         <table>
-                            <thead><tr><th>Datum</th><th>Winkel</th><th>Bedrag</th></tr></thead>
+                            <thead><tr><th>Datum</th><th>Winkel</th><th style="width: 30%;">Bedrag</th></tr></thead>
                             <tbody id="supTransactiesBody"></tbody>
                         </table>
                     </div>
@@ -290,9 +288,10 @@
 
     </div>
     
-   <a href="https://docs.google.com/forms/d/e/1FAIpQLSegMcaS5BsiaHL8oAE-4rO9GSv5Yu-fzQkpetkfKfJaTx3Vnw/viewform?usp=dialog" target="_blank" class="fab-btn" title="Kassaticket toevoegen">
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSegMcaS5BsiaHL8oAE-4rO9GSv5Yu-fzQkpetkfKfJaTx3Vnw/viewform?usp=dialog" target="_blank" class="fab-btn" title="Kassaticket toevoegen">
         +
     </a>
+
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); });

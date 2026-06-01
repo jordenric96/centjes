@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Sparen Genegeerd + Slimme Inzichten + YoY Grafiek)
+// app.js - Financiële Dashboard (Klikbare Maanden voor Top 5)
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -523,7 +523,6 @@ function updateDashboard() {
     bouwTransactieTabel(tabelData);
 }
 
-// NIEUW: BOUW JAAR OP JAAR (YoY) GRAFIEK
 function bouwYoYGrafiek(gekozenJaar) {
     if (window.mijnYoYGrafiek) window.mijnYoYGrafiek.destroy();
     let jaarNu = parseInt(gekozenJaar);
@@ -534,10 +533,10 @@ function bouwYoYGrafiek(gekozenJaar) {
 
     alleData.forEach(r => {
         let cat = bepaalCategorie(r);
-        if (cat === "Sparen & Intern") return; // Negeer sparen
+        if (cat === "Sparen & Intern") return; 
         
         let b = parseBedragNumber(haalWaarde(r, KOLOM_BEDRAG));
-        if (isNaN(b) || b >= 0) return; // Alleen uitgaven
+        if (isNaN(b) || b >= 0) return; 
 
         let j = parseInt(haalJaar(haalWaarde(r, KOLOM_DATUM)));
         let m = haalRuweMaand(haalWaarde(r, KOLOM_DATUM));
@@ -549,7 +548,7 @@ function bouwYoYGrafiek(gekozenJaar) {
     let huidigeDatum = new Date();
     if (jaarNu === huidigeDatum.getFullYear()) {
         for (let i = huidigeDatum.getMonth() + 1; i < 12; i++) {
-            dataNu[i] = null; // Laat lijn stoppen in de toekomst
+            dataNu[i] = null; 
         }
     }
 
@@ -568,10 +567,8 @@ function bouwYoYGrafiek(gekozenJaar) {
     });
 }
 
-// NIEUW: SLIMME INZICHTEN ALGORITME
 function bouwSlimmeInzichten() {
     let huidigeDatum = new Date();
-    // We kijken naar de 1e van de huidige maand om maanden terug te tellen
     let dNu = new Date(huidigeDatum.getFullYear(), huidigeDatum.getMonth(), 1);
     
     let uitgavenNu = {};
@@ -579,7 +576,6 @@ function bouwSlimmeInzichten() {
 
     alleData.forEach(r => {
         let cat = bepaalCategorie(r);
-        // Focus puur op de variabele/vrije uitgaven. Sparen en Vaste kosten uitgesloten.
         if (cat === "Sparen & Intern" || VASTE_CATEGORIEEN.includes(cat)) return; 
         
         let b = parseBedragNumber(haalWaarde(r, KOLOM_BEDRAG));
@@ -649,6 +645,9 @@ function verwerkData(data, huidigJaar) {
     const maanden = {}, cats = {}, groepen = {}, hgBreakdown = {};
     const top5Data = {}; 
     
+    // NIEUW: We slaan hier ook de uitgaven per maand/winkel op voor de maand-accordion
+    const maandTop5Data = {}; 
+
     data.forEach(r => {
         let b = parseBedragNumber(haalWaarde(r, KOLOM_BEDRAG));
         if (isNaN(b)) return;
@@ -668,13 +667,11 @@ function verwerkData(data, huidigJaar) {
         if (!maanden[m]) maanden[m] = { in: 0, uit: 0 };
         
         if (b > 0) { 
-            // Inkomsten
             if (!isSparen) { 
                 inkomsten += b; 
                 maanden[m].in += b; 
             }
         } else {
-            // Uitgaven - SPAREN VOLLEDIG GENEGEERD!
             if (!isSparen) {
                 uitgaven += b; 
                 maanden[m].uit += b;
@@ -684,8 +681,14 @@ function verwerkData(data, huidigJaar) {
                 } else {
                     let winkelNaam = schoonNaamOp(null, r);
                     if (winkelNaam !== "Transactie (Geen details)") {
+                        // Telt op voor de hoofd Top 5 (volledig jaar)
                         if (!top5Data[winkelNaam]) top5Data[winkelNaam] = 0;
                         top5Data[winkelNaam] += Math.abs(b);
+                        
+                        // Telt op voor de specifieke maand Top 5
+                        if (!maandTop5Data[m]) maandTop5Data[m] = {};
+                        if (!maandTop5Data[m][winkelNaam]) maandTop5Data[m][winkelNaam] = 0;
+                        maandTop5Data[m][winkelNaam] += Math.abs(b);
                     }
                 }
 
@@ -713,13 +716,75 @@ function verwerkData(data, huidigJaar) {
         if (spaarBalansVanafJuni >= spaarDoel) bar.style.backgroundColor = '#059669'; else bar.style.backgroundColor = '#10b981';
     }
     
-    const gesorteerdeMaanden = Object.keys(maanden).sort();
-    document.getElementById('maandBody').innerHTML = [...gesorteerdeMaanden].reverse().map(mnd => {
-        if(mnd === "Onbekend") return '';
-        const md = maanden[mnd], mBalans = md.in + md.uit; let tmpD = mnd.split('-');
+    // MAAND TABEL GENEREREN (MET ACCORDION)
+    const maandContainer = document.getElementById('maandBody');
+    maandContainer.innerHTML = '';
+    const gesorteerdeMaanden = Object.keys(maanden).sort().reverse();
+
+    gesorteerdeMaanden.forEach(mnd => {
+        if(mnd === "Onbekend") return;
+        const md = maanden[mnd], mBalans = md.in + md.uit;
+        let tmpD = mnd.split('-');
         let mNaam = new Date(tmpD[0], parseInt(tmpD[1])-1, 1).toLocaleString('nl-BE', { month: 'short' });
-        return `<tr><td><strong>${mNaam.charAt(0).toUpperCase() + mNaam.slice(1)} ${tmpD[0]}</strong></td><td class="tekst-positief">${formatBedrag(md.in)}</td><td class="tekst-negatief">${formatBedrag(md.uit)}</td><td class="${mBalans >= 0 ? "tekst-positief" : "tekst-negatief"}"><strong>${formatBedrag(mBalans)}</strong></td></tr>`;
-    }).join('');
+        mNaam = mNaam.charAt(0).toUpperCase() + mNaam.slice(1) + ' ' + tmpD[0];
+
+        // Hoofdrij (De maand zelf)
+        const trHoofd = document.createElement('tr');
+        trHoofd.style.cursor = 'pointer';
+        trHoofd.style.backgroundColor = '#ffffff';
+        trHoofd.className = 'mnd-row';
+        trHoofd.innerHTML = `
+            <td><span class="pijl-mnd" style="display:inline-block; transition: transform 0.2s; margin-right:8px; font-size:0.8rem;">▶</span> <strong>${mNaam}</strong></td>
+            <td class="tekst-positief">${formatBedrag(md.in)}</td>
+            <td class="tekst-negatief">${formatBedrag(md.uit)}</td>
+            <td class="${mBalans >= 0 ? "tekst-positief" : "tekst-negatief"}"><strong>${formatBedrag(mBalans)}</strong></td>`;
+
+        // Subrij (De verborgen Top 5 tabel)
+        const trSub = document.createElement('tr');
+        trSub.style.display = 'none';
+        trSub.className = 'mnd-sub-row';
+
+        let top5Html = '';
+        if (maandTop5Data[mnd]) {
+            let items = Object.keys(maandTop5Data[mnd]).map(k => ({naam: k, bedrag: maandTop5Data[mnd][k]}));
+            items.sort((a,b) => b.bedrag - a.bedrag);
+            let top5Items = items.slice(0,5); // Alleen de 5 grootste pakken
+            
+            if(top5Items.length > 0) {
+                top5Html = `
+                <div style="padding: 10px 15px; background: #f8fafc; border-left: 3px solid var(--primary); margin: 5px 0; font-size: 0.85rem;">
+                    <strong style="color: var(--primary); display:block; margin-bottom: 5px;">Top 5 Variabele Uitgaven (${mNaam})</strong>
+                    <table style="width: 100%; border: none;">
+                        ${top5Items.map((item, i) => `<tr><td style="padding: 2px 0; border: none; color: #475569;">${i+1}. ${item.naam}</td><td style="padding: 2px 0; border: none; text-align: right; font-weight: 600; color: var(--danger);">${formatBedrag(item.bedrag)}</td></tr>`).join('')}
+                    </table>
+                </div>`;
+            }
+        }
+
+        trSub.innerHTML = `<td colspan="4" style="padding: 0; border-bottom: 1px solid #e5e7eb;">${top5Html || '<div style="padding: 10px 15px; font-size: 0.85rem; color: #64748b; background: #f8fafc; margin: 5px 0;">Geen variabele uitgaven gevonden.</div>'}</td>`;
+
+        maandContainer.appendChild(trHoofd);
+        maandContainer.appendChild(trSub);
+
+        // Klik-actie om open/dicht te klappen
+        trHoofd.onclick = () => {
+            const isExpanded = trSub.style.display === 'table-row';
+            
+            // Sluit eerst alle andere maanden af
+            document.querySelectorAll('.mnd-row').forEach(r => {
+                r.style.backgroundColor = '#ffffff';
+                r.querySelector('.pijl-mnd').style.transform = 'rotate(0deg)';
+            });
+            document.querySelectorAll('.mnd-sub-row').forEach(r => r.style.display = 'none');
+
+            // Klap de geklikte open als hij nog dicht was
+            if (!isExpanded) {
+                trSub.style.display = 'table-row';
+                trHoofd.style.backgroundColor = '#f1f5f9';
+                trHoofd.querySelector('.pijl-mnd').style.transform = 'rotate(90deg)';
+            }
+        };
+    });
     
     bouwDrillDownTabel(hgBreakdown, groepen);
     bouwTop5Tabel(top5Data); 

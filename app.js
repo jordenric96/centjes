@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Nieuwe Supermarkt Tab: Aantal Dagen & Procent)
+// app.js - Financiële Dashboard (Strikte naam-opschoning voor supermarkten & winkels)
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -16,7 +16,7 @@ const KOLOM_TYPE = "Type verrichting";
 
 const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "Dierendo", "ESN", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "Alvo", "FOOD FACTORY", "HELLOFRESH", "WIBRA"],
-    "Creche": ["disneyland", "creche", "kinderopvang"],
+    "Creche": ["disneyland", "creche"],
     "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG", "FOODCOMPANY", "The Foodcompany"],
     "Restaurant": ["restaurant", "brasserie", "JANE'S", "bistro", "pizzeria", "PIAZZA", "WOLF BRUXELLES", "DIMATTO", "FRAMILIE", "BUYSSE MOBIELE", "LUYCKX GIANNI"], 
@@ -249,14 +249,25 @@ function schoonNaamOp(rij) {
 
     let tl = t.toLowerCase();
     
+    // --- STRIKTE SAMENVOEGING VOOR WINKELS ---
     if (tl.includes("ricour-de bruyn") || tl.includes("ricour noe")) return "Sparen (Intern)";
     if (tl.includes("disneyland") || tl.includes("kinderopvang") || tl.includes("creche")) return "Disneyland Kinderopvang";
     
+    if (tl.includes("delhaize")) return "Delhaize";
+    if (tl.includes("bon'ap") || tl.includes("bonap")) return "Bon'Ap";
+    if (tl.includes("hellofresh")) return "HelloFresh";
+    if (tl.includes("aldi")) return "Aldi";
+    if (tl.includes("wibra")) return "Wibra";
+    if (tl.includes("ava ")) return "AVA";
+    if (tl.includes("dierendo")) return "Atelier Dierendo";
+    if (tl.includes("esn.com") || tl.includes("esn ")) return "ESN";
     if (tl.includes("okay")) return "Okay";
     if (tl.includes("kruidvat")) return "Kruidvat";
-    if (tl.includes("schelck huwaert")) return "Delhaize";
     if (tl.includes("albert heijn")) return "Albert Heijn";
     if (tl.includes("freshville")) return "Alvo";
+    if (tl.includes("colruyt")) return "Colruyt";
+    if (tl.includes("carrefour")) return "Carrefour";
+    if (tl.includes("mcdonald")) return "McDonald's";
     
     t = t.replace(/BETALING MET DEBETKAART NUMMER\s+[\d\sX*]{15,30}/gi, ''); 
     t = t.replace(/BANCONTACT BANKREFERENTIE\s*:\s*[A-Z0-9\-]+/gi, '');
@@ -291,7 +302,6 @@ function initialiseerDropdowns() {
     mndSelect.innerHTML = '<option value="alle">Alle Maanden</option>';
     maandenNaam.forEach((m, i) => { mndSelect.innerHTML += `<option value="${i}">${m}</option>`; });
     
-    // Dropdown voor supermarkt tab
     const supMndSelect = document.getElementById('supFilterMaand');
     supMndSelect.innerHTML = '<option value="alle">Alle Maanden</option>';
     maandenNaam.forEach((m, i) => { supMndSelect.innerHTML += `<option value="${i}">${m}</option>`; });
@@ -310,7 +320,6 @@ function initialiseerDropdowns() {
         document.getElementById(id).addEventListener('change', updateDashboard);
     });
     
-    // Listener specifiek voor Supermarkt dropdown (koppelt ook aan jaarSelect)
     document.getElementById('supFilterMaand').addEventListener('change', updateSupermarktDash);
     document.getElementById('jaarSelect').addEventListener('change', updateSupermarktDash);
 
@@ -382,17 +391,15 @@ function updateWeekbudgetUI() {
     tbody.innerHTML = gecombineerdeLijst.length === 0 ? '<tr><td colspan="3" style="text-align:center; padding: 20px;">Geen transacties.</td></tr>' : gecombineerdeLijst.map(item => `<tr><td><strong>${item.datumStr}</strong></td><td><div class="omschrijving-cel" title="${item.naam}">${item.naam}</div></td><td class="tekst-negatief"><strong>${formatBedrag(item.bedrag)}</strong></td></tr>`).join('');
 }
 
-// NIEUW: Functie voor Supermarkt Tabblad Analyse
 function updateSupermarktDash() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
     const fMaand = document.getElementById('supFilterMaand').value; 
     
-    // Stap 1: Filter banktransacties voor supermarkt & jaar
     let supData = [];
     alleData.forEach(rij => {
         if(haalJaar(haalWaarde(rij, KOLOM_DATUM)) === gekozenJaar && bepaalCategorie(rij) === 'Supermarkt') {
             let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
-            if(b < 0) { // Alleen uitgaven tellen mee
+            if(b < 0) { 
                 supData.push({
                     isManual: false,
                     datumObj: parseDatumToDate(haalWaarde(rij, KOLOM_DATUM)),
@@ -405,7 +412,6 @@ function updateSupermarktDash() {
         }
     });
     
-    // Stap 2: Voeg handmatige budgetData toe
     budgetData.forEach(rij => {
         let dStr = haalWaarde(rij, 'datum') || haalWaarde(rij, 'tijdstempel');
         let bStr = haalWaarde(rij, 'bedrag');
@@ -426,13 +432,11 @@ function updateSupermarktDash() {
         }
     });
 
-    // Stap 3: Filter eventueel op geselecteerde maand
     if (fMaand !== "alle") {
         let m = parseInt(fMaand);
         supData = supData.filter(item => item.ruweMaand === m);
     }
 
-    // Stap 4: Bereken Statistieken
     let uniekeDagen = new Set();
     let totaalBedrag = 0;
     let perWinkel = {};
@@ -445,23 +449,20 @@ function updateSupermarktDash() {
         perWinkel[item.winkel] += item.bedrag;
     });
 
-    // Bepaal hoeveel dagen er al gepasseerd zijn voor het percentage
     let y = parseInt(gekozenJaar);
     let m = fMaand !== "alle" ? parseInt(fMaand) : -1;
     let dagenInPeriode = 1;
     let today = new Date();
     
     if (m !== -1) {
-        // Specifieke maand
         if (y === today.getFullYear() && m === today.getMonth()) {
-            dagenInPeriode = today.getDate(); // Tot vandaag
+            dagenInPeriode = today.getDate(); 
         } else if (y > today.getFullYear() || (y === today.getFullYear() && m > today.getMonth())) {
-            dagenInPeriode = new Date(y, m + 1, 0).getDate(); // Toekomst = volle maand
+            dagenInPeriode = new Date(y, m + 1, 0).getDate(); 
         } else {
-            dagenInPeriode = new Date(y, m + 1, 0).getDate(); // Verleden = volle maand
+            dagenInPeriode = new Date(y, m + 1, 0).getDate(); 
         }
     } else {
-        // Heel Jaar
         if (y === today.getFullYear()) {
             let start = new Date(y, 0, 1);
             dagenInPeriode = Math.max(1, Math.ceil((today - start) / (1000 * 60 * 60 * 24)));
@@ -475,17 +476,14 @@ function updateSupermarktDash() {
     let perc = (uniekeDagen.size / dagenInPeriode) * 100;
     if(perc > 100) perc = 100;
 
-    // Render Bovenste Kaartjes
     document.getElementById('supAantalDagen').innerText = uniekeDagen.size;
     document.getElementById('supPercentage').innerText = perc.toFixed(1) + '%';
     document.getElementById('supTotaal').innerText = formatBedrag(totaalBedrag);
 
-    // Render Winkel Lijst
     let winkelArr = Object.keys(perWinkel).map(k => ({ naam: k, totaal: perWinkel[k] }));
     winkelArr.sort((a, b) => b.totaal - a.totaal);
     document.getElementById('supWinkelBody').innerHTML = winkelArr.length === 0 ? '<tr><td colspan="2" style="text-align:center; padding:15px;">Geen transacties</td></tr>' : winkelArr.map(w => `<tr><td><strong>${w.naam}</strong></td><td style="text-align:right;" class="tekst-negatief"><strong>${formatBedrag(w.totaal)}</strong></td></tr>`).join('');
 
-    // Render Alle Transacties
     supData.sort((a, b) => b.datumObj - a.datumObj);
     document.getElementById('supTransactiesBody').innerHTML = supData.length === 0 ? '<tr><td colspan="3" style="text-align:center; padding:15px;">Geen transacties</td></tr>' : supData.map(t => `<tr><td>${t.datumStr}</td><td><div class="omschrijving-cel" title="${t.winkel}">${t.winkel}</div></td><td class="tekst-negatief"><strong>${formatBedrag(t.bedrag)}</strong></td></tr>`).join('');
 }

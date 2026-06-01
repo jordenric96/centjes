@@ -1,7 +1,11 @@
-// app.js - Financiële Dashboard (Anti-NaN fix, 180 limiet & Spaardoel vanaf 1 juni)
+// app.js - Financiële Dashboard (Multi-Sheet ondersteuning, Anti-NaN, Spaardoel)
 
-const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv";
-const budgetSheetUrl = ""; 
+// De 3 links naar jouw aparte tabbladen:
+const bankSheetUrls = [
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1758541093&single=true&output=csv"
+];
+const supermarktSheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1527123423&single=true&output=csv"; 
 
 const KOLOM_DATUM = "Uitvoeringsdatum"; 
 const KOLOM_BEDRAG = "Bedrag"; 
@@ -24,7 +28,12 @@ const CATEGORIE_RULES = {
     "Meubelwinkel": ["Jysk", "Ikea", "MATRATZEN", "HEMA"],
     "Apotheek": ["Apotheek", "NEWPHARMA", "Pharma", "FARMALINE"], 
     "Bakker": ["Exotica", "Locus"],
+    
+    // --- Auto & Belastingen ---
     "Tanken": ["Dats", "Total"],
+    "Auto (Kosten & Taks)": ["verkeersbelasting", "vlaamse belastingdienst", "autoverzekering", "autokeuring"],
+    "Belastingen (Huis)": ["kadastraal", "onroerende voorheffing", "belasting"],
+    
     "Sushi": ["Sushi"],
     "Kleren": ["Fashion", "Zalando", "JBC", "H&M", "Zara", "DEDOLES", "KIABI"],
     "Kapper": ["Hair", "BLONDES & BROWNIES"],
@@ -48,19 +57,19 @@ const CATEGORIE_RULES = {
 
 const HOOFD_GROEPEN = {
     "Eten en drinken": ["Supermarkt", "Frietjes", "Restaurant", "Ijsjes", "Broodjes", "Bakker", "Sushi"],
-    "Huis": ["Bouwmarkt", "Meubelwinkel", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland", "Ketel onderhoud", "Bloemen"],
+    "Huis": ["Bouwmarkt", "Meubelwinkel", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland", "Ketel onderhoud", "Bloemen", "Belastingen (Huis)"],
     "Verzorging": ["Apotheek", "Kapper", "Kine", "Bril"],
     "Verzekeringen": ["AG insurance"],
     "Werk": ["Automaat werk", "Pluspas"],
     "Hobby's": ["Hobby's"],
     "Lou & Noé": ["Creche", "Dreamland"],
-    "Auto": ["Tanken"],
+    "Auto": ["Tanken", "Auto (Kosten & Taks)"],
     "Shoppen & Kleding": ["Kleren", "Online"],
     "Bank & Geldzaken": ["Visa", "Geldafhaling"],
     "Inkomsten": ["Loon", "Kinderbijslag", "Terugbetaling"]
 };
 
-const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland"];
+const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit", "Internet & Telecom", "Haviland", "Belastingen (Huis)", "Auto (Kosten & Taks)"];
 
 let alleData = []; 
 let budgetData = []; 
@@ -81,17 +90,52 @@ function switchView(viewName) {
     if(viewName === 'weekbudget') { updateWeekbudgetUI(); }
 }
 
-Papa.parse(sheetUrl, {
-    download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
-    complete: function(results) {
-        alleData = results.data;
-        document.getElementById('status').innerText = `Bank verbonden (${alleData.length} transacties)`;
-        document.getElementById('status').classList.add('succes');
-        initialiseerDropdowns();
-    }
-});
+// Meerdere tabbladen ophalen via async functies
+function fetchCSV(url) {
+    return new Promise((resolve, reject) => {
+        if (!url || url.includes("HIER_PLAKKEN")) { resolve([]); return; }
+        Papa.parse(url, {
+            download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+            complete: function(results) { resolve(results.data); },
+            error: function(err) { console.warn("Kon CSV niet laden:", url); resolve([]); }
+        });
+    });
+}
 
-// ROBUUSTE UITLEZING: Haalt veilig kolommen op, zelfs als Google Sheets ze iets anders noemt (zoals met spaties)
+async function laadAlleData() {
+    try {
+        let statusEl = document.getElementById('status');
+        statusEl.innerText = "Gegevens ophalen...";
+        statusEl.classList.remove('succes');
+
+        // Haal beide bank tabbladen tegelijk op
+        let bankPromises = bankSheetUrls.map(url => fetchCSV(url));
+        let bankResults = await Promise.all(bankPromises);
+        
+        alleData = [];
+        bankResults.forEach(data => alleData = alleData.concat(data));
+
+        // Haal het supermarkt tabblad op
+        budgetData = await fetchCSV(supermarktSheetUrl);
+
+        if (alleData.length > 0) {
+            statusEl.innerText = `Bank verbonden (${alleData.length} transacties)`;
+            statusEl.classList.add('succes');
+        } else {
+            statusEl.innerText = `Geen data gevonden (check je links)`;
+            statusEl.style.backgroundColor = "#ef4444";
+        }
+        
+        initialiseerDropdowns();
+
+    } catch (error) {
+        document.getElementById('status').innerText = "Fout bij laden!";
+    }
+}
+
+// Start het ophalen
+laadAlleData();
+
 function haalWaarde(rij, kolomMatch) {
     if (rij[kolomMatch] !== undefined) return rij[kolomMatch];
     for (let k in rij) {
@@ -100,7 +144,6 @@ function haalWaarde(rij, kolomMatch) {
     return undefined;
 }
 
-// SLIMME REKENMACHINE: Vangt alle komma's, punten, foutjes op zodat NaN onmogelijk is.
 function parseBedragNumber(val) {
     if (val === null || val === undefined || val === '') return NaN;
     if (typeof val === 'number') return val;
@@ -190,7 +233,6 @@ function bepaalHoofdgroep(sub) {
     return "Overig";
 }
 
-// Zorgt dat NaN wordt omgevormd naar een propere € 0.00 als vangnet
 function formatBedrag(g) { 
     if (isNaN(g) || g === null) return "€ 0.00";
     return "€ " + Math.abs(g).toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
@@ -236,6 +278,10 @@ function initialiseerDropdowns() {
         const jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM)); 
         if (jaar !== "Onbekend") jarenSet.add(jaar); 
     });
+    
+    // Zorg dat in ieder geval het huidige jaar in de dropdown staat, ook als sheet leeg is
+    jarenSet.add(String(new Date().getFullYear()));
+    
     const jaarSelect = document.getElementById('jaarSelect');
     jaarSelect.innerHTML = ''; 
     Array.from(jarenSet).sort().reverse().forEach(j => { jaarSelect.innerHTML += `<option value="${j}">${j}</option>`; });
@@ -283,24 +329,58 @@ function updateWeekbudgetUI() {
     
     let totaalUitgegeven = 0, totaalMaandUitgegeven = 0, gecombineerdeLijst = [];
     
+    // 1. Bank Data voor supermarkt inladen
     alleData.forEach(rij => {
         if(bepaalCategorie(rij) !== 'Supermarkt') return;
         
         let bedrag = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
         if(isNaN(bedrag) || bedrag >= 0) return; 
         
+        let absoluteBedrag = Math.abs(bedrag);
         let rijJaar = parseInt(haalJaar(haalWaarde(rij, KOLOM_DATUM)));
         let rijMaand = haalRuweMaand(haalWaarde(rij, KOLOM_DATUM));
-        if (rijJaar === doelJaar && rijMaand === doelMaand) totaalMaandUitgegeven += Math.abs(bedrag);
+        
+        if (rijJaar === doelJaar && rijMaand === doelMaand) totaalMaandUitgegeven += absoluteBedrag;
         
         const d = parseDatumToDate(haalWaarde(rij, KOLOM_DATUM));
         if(d && getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
-            totaalUitgegeven += Math.abs(bedrag);
-            gecombineerdeLijst.push({ datumObj: d, datumStr: haalWaarde(rij, KOLOM_DATUM), naam: schoonNaamOp(rij), bedrag: Math.abs(bedrag) });
+            totaalUitgegeven += absoluteBedrag;
+            gecombineerdeLijst.push({ datumObj: d, datumStr: haalWaarde(rij, KOLOM_DATUM), naam: schoonNaamOp(rij), bedrag: absoluteBedrag });
         }
     });
+
+    // 2. Handmatige bonnen inladen uit je nieuwe "supermarkt" tabblad
+    if (budgetData.length > 0) {
+        budgetData.forEach(rij => {
+            let dStr = haalWaarde(rij, 'datum');
+            let bStr = haalWaarde(rij, 'bedrag');
+            let winkel = haalWaarde(rij, 'winkel') || 'Handmatige bon';
+            
+            if (!dStr || bStr == null) return;
+            
+            let bedrag = parseBedragNumber(bStr);
+            if (isNaN(bedrag)) return;
+            
+            let absoluteBedrag = Math.abs(bedrag);
+            let d = parseDatumToDate(dStr);
+            
+            // Controleer of de bon in deze maand viel
+            if (d && d.getFullYear() === doelJaar && d.getMonth() === doelMaand) {
+                totaalMaandUitgegeven += absoluteBedrag;
+            }
+
+            if(d && getISOWeek(d) === toonWeek && getISOYear(d) === toonJaar) {
+                totaalUitgegeven += absoluteBedrag;
+                gecombineerdeLijst.push({ 
+                    datumObj: d, 
+                    datumStr: dStr, 
+                    naam: "✍️ " + winkel, 
+                    bedrag: absoluteBedrag 
+                });
+            }
+        });
+    }
     
-    // GROEN als uitgaven ONDER OF GELIJK AAN 180 is. Anders ROOD.
     let uitgavenKleur = totaalUitgegeven <= 180 ? 'bedrag positief' : 'bedrag negatief';
     let tonenEl = document.getElementById('weekUitgegevenTonen');
     tonenEl.innerText = formatBedrag(totaalUitgegeven);
@@ -354,7 +434,6 @@ function verwerkData(data, huidigJaar) {
         if (isNaN(b)) return;
 
         const d = parseDatumToDate(haalWaarde(r, KOLOM_DATUM));
-        // START VANAF 1 JUNI VOOR HET SPAARDOEL
         if (d && d.getTime() >= startDatumSpaardoel.getTime()) {
             spaarBalansVanafJuni += b;
         }
@@ -384,7 +463,6 @@ function verwerkData(data, huidigJaar) {
     document.getElementById('jaarBalans').innerText = (balans < 0 ? "- " : "") + formatBedrag(balans);
     document.getElementById('vastTotaal').innerText = formatBedrag(vast);
     
-    // Spaardoel Update met de gefilterde balans
     const spaarDoel = 2000;
     let percentage = (spaarBalansVanafJuni / spaarDoel) * 100;
     if (percentage < 0) percentage = 0;

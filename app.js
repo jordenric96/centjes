@@ -1,4 +1,4 @@
-// app.js - Financieel Dashboard - Volledig en Compleet met Supermarkt Bezoek-Teller
+// app.js - Financieel Dashboard - Volledig en Compleet (Marges, 4-5 bezoeken, Grafiek start 40%)
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -475,8 +475,9 @@ function tekenSupPercGrafiek(gekozenJaar, supData) {
             maintainAspectRatio: false, 
             scales: { 
                 y: { 
+                    min: 40, // AANGEPAST: Begint bij 40%
                     max: 100, 
-                    beginAtZero: true,
+                    beginAtZero: false,
                     ticks: { callback: function(value) { return value + '%'; } }
                 } 
             },
@@ -533,7 +534,7 @@ function updateSupermarktDash() {
     let uniekeDagen = new Set();
     let totaalBedrag = 0;
     let perWinkel = {};
-    let bezoekenPerDag = {}; // NIEUW: Houdt aantal bezoeken per datum bij
+    let bezoekenPerDag = {}; 
     
     supDataFiltered.forEach(item => {
         if(item.datumStr) {
@@ -548,16 +549,20 @@ function updateSupermarktDash() {
         perWinkel[item.winkel] += item.bedrag;
     });
     
-    // BEREKEN BEZOEKEN PER DAG
-    let count1 = 0, count2 = 0, count3plus = 0;
+    // AANGEPAST: BEREKEN BEZOEKEN PER DAG TOT 5+
+    let count1 = 0, count2 = 0, count3 = 0, count4 = 0, count5plus = 0;
     Object.values(bezoekenPerDag).forEach(aantal => {
         if (aantal === 1) count1++;
         else if (aantal === 2) count2++;
-        else if (aantal >= 3) count3plus++;
+        else if (aantal === 3) count3++;
+        else if (aantal === 4) count4++;
+        else if (aantal >= 5) count5plus++;
     });
-    document.getElementById('sup1Keer').innerText = count1 + "x";
-    document.getElementById('sup2Keer').innerText = count2 + "x";
-    document.getElementById('sup3Keer').innerText = count3plus + "x";
+    document.getElementById('sup1Keer').innerText = count1;
+    document.getElementById('sup2Keer').innerText = count2;
+    document.getElementById('sup3Keer').innerText = count3;
+    document.getElementById('sup4Keer').innerText = count4;
+    document.getElementById('sup5Keer').innerText = count5plus;
     
     let y = parseInt(gekozenJaar), m = (fMaand !== "alle") ? parseInt(fMaand) : -1, today = new Date();
     let daysInPeriod = 1;

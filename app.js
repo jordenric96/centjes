@@ -1,4 +1,4 @@
-// app.js - Financiële Dashboard (Top 5 gefixt: Sparen & Intern uitgesloten)
+// app.js - Financiële Dashboard (Creche netjes samengevoegd in Top 5)
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -16,7 +16,7 @@ const KOLOM_TYPE = "Type verrichting";
 
 const CATEGORIE_RULES = {
     "Supermarkt": ["huwaert", "Dierendo", "ESN", "FLAVOR SHOP", "AVA", "Kruidvat", "okay", "colruyt", "carrefour", "aldi", "CO&GO", "BON'AP", "ALBERT HEIJN", "delhaize", "Alvo", "FOOD FACTORY", "HELLOFRESH", "WIBRA"],
-    "Creche": ["disneyland", "creche"],
+    "Creche": ["disneyland", "creche"], // Aangepast zoals gevraagd
     "Automaat werk": ["SELECTA 2850 BOOM", "BNP PARIBAS FORTIS 1000 BRUSSEL 29"],
     "Frietjes": ["Carnier", "Frit", "Brochettte", "friet", "MCDONALD'S", "HOGENBERG", "FOODCOMPANY", "The Foodcompany"],
     "Restaurant": ["restaurant", "brasserie", "JANE'S", "bistro", "pizzeria", "PIAZZA", "WOLF BRUXELLES", "DIMATTO", "FRAMILIE", "BUYSSE MOBIELE", "LUYCKX GIANNI"], 
@@ -53,8 +53,6 @@ const CATEGORIE_RULES = {
     "Loon": ["loon", "salaris", "wedde", "bezoldiging"],
     "Kinderbijslag": ["groeipakket", "kinderbijslag", "fons", "infino", "kidslife", "parentia", "myfamily"],
     "Terugbetaling": ["terugbetaling", "mutualiteit", "cm", "solidaris", "helAN"],
-    
-    // --- Nieuw: Sparen & Interne Overschrijvingen ---
     "Sparen & Intern": ["ricour-de bruyn", "ricour noe", "spaarrekening"]
 };
 
@@ -68,7 +66,7 @@ const HOOFD_GROEPEN = {
     "Lou & Noé": ["Creche", "Dreamland"],
     "Auto": ["Tanken", "Auto (Kosten & Taks)"],
     "Shoppen & Kleding": ["Kleren", "Online"],
-    "Bank & Geldzaken": ["Visa", "Geldafhaling", "Sparen & Intern"], // Toegevoegd aan Bank
+    "Bank & Geldzaken": ["Visa", "Geldafhaling", "Sparen & Intern"], 
     "Inkomsten": ["Loon", "Kinderbijslag", "Terugbetaling"]
 };
 
@@ -252,8 +250,9 @@ function schoonNaamOp(rij) {
 
     let tl = t.toLowerCase();
     
-    // --- NIEUW: Schone namen voor sparen ---
+    // --- SAMENVOEGEN VOOR TOP 5 ---
     if (tl.includes("ricour-de bruyn") || tl.includes("ricour noe")) return "Sparen (Intern)";
+    if (tl.includes("disneyland") || tl.includes("kinderopvang") || tl.includes("creche")) return "Disneyland Kinderopvang";
     
     if (tl.includes("okay")) return "Okay";
     if (tl.includes("kruidvat")) return "Kruidvat";
@@ -424,7 +423,6 @@ function verwerkData(data, huidigJaar) {
         } else {
             uitgaven += b; maanden[m].uit += b;
             
-            // --- TOP 5 LOGICA (MET UITZONDERING VAN SPAREN) ---
             if (VASTE_CATEGORIEEN.includes(cat)) {
                 vast += Math.abs(b);
             } else if (cat !== "Sparen & Intern") {

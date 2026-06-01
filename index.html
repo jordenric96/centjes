@@ -21,7 +21,7 @@
         .hoofd-container { width: 100%; max-width: 100vw; padding: 10px; overflow-x: hidden; }
         .card { width: 100%; min-width: 0; max-width: 100%; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 15px; margin-bottom: 20px; overflow: hidden; }
         
-        .dashboard-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); width: 100%; min-width: 0; margin-bottom: 20px; }
+        .dashboard-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); width: 100%; min-width: 0; margin-bottom: 20px; }
         .content-grid { display: grid; gap: 15px; grid-template-columns: 1fr; width: 100%; min-width: 0; margin-bottom: 20px; }
         .trend-grid { display: grid; gap: 15px; grid-template-columns: 1fr; width: 100%; min-width: 0; margin-bottom: 20px; }
         
@@ -40,8 +40,8 @@
         .chart-container { position: relative; width: 100%; max-width: 100%; height: 250px; }
         .trend-container { position: relative; width: 100%; max-width: 100%; height: 200px; }
         
-        .tab-container { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
-        .tab-btn { flex: 1; background: transparent; border: none; padding: 10px; font-size: 1rem; font-weight: 700; color: #64748b; border-radius: 8px; cursor: pointer; text-align: center; }
+        .tab-container { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; min-width: 100px; background: transparent; border: none; padding: 10px; font-size: 0.95rem; font-weight: 700; color: #64748b; border-radius: 8px; cursor: pointer; text-align: center; }
         .tab-btn.active { background: var(--primary); color: white; }
         
         .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 10px; border-radius: 12px; border: 1px solid #e5e7eb; gap: 10px; }
@@ -63,30 +63,14 @@
         .header-titel h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
         .status-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: #e2e8f0; }
 
-        /* NIEUW: Zwevende Plus-knop voor snelle invoer */
         .fab-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background-color: var(--success);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 32px;
-            font-weight: 300;
-            text-decoration: none;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.25);
-            z-index: 1000;
-            transition: transform 0.2s, background-color 0.2s;
+            position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px;
+            background-color: var(--success); color: white; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; font-size: 32px;
+            font-weight: 300; text-decoration: none; box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+            z-index: 1000; transition: transform 0.2s, background-color 0.2s;
         }
-        .fab-btn:hover {
-            transform: scale(1.08);
-            background-color: #059669;
-        }
+        .fab-btn:hover { transform: scale(1.08); background-color: #059669; }
     </style>
 </head>
 <body>
@@ -97,18 +81,19 @@
                 <h1>Dashboard</h1>
                 <div id="status" class="status-badge">Gegevens ophalen...</div>
             </div>
+            <!-- Algemene Jaar Filter die voor het hele dashboard geldt -->
+            <div class="filter-row" style="margin-bottom: 15px;">
+                <select id="jaarSelect" class="filter-select"></select>
+            </div>
         </header>
 
         <div class="tab-container">
             <button id="btn-tab-dash" class="tab-btn active" onclick="switchView('dashboard')">📊 Jaar</button>
-            <button id="btn-tab-week" class="tab-btn" onclick="switchView('weekbudget')">🛒 Weekbudget</button>
+            <button id="btn-tab-week" class="tab-btn" onclick="switchView('weekbudget')">🛒 Week</button>
+            <button id="btn-tab-sup" class="tab-btn" onclick="switchView('supermarkt')">🏪 Supermarkt</button>
         </div>
 
         <div id="view-dashboard">
-            <div class="filter-row">
-                <select id="jaarSelect" class="filter-select"></select>
-            </div>
-
             <section class="card" style="padding: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h3 style="margin: 0; color: var(--primary); font-size: 1rem;">🎯 Spaardoel (1 jun - 1 aug)</h3>
@@ -258,6 +243,51 @@
                 </div>
             </section>
         </div>
+
+        <!-- NIEUW: SUPERMARKT TABBLAD -->
+        <div id="view-supermarkt" style="display: none;">
+            <div class="filter-row" style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
+                <select id="supFilterMaand" class="filter-select"></select>
+            </div>
+
+            <section class="dashboard-grid">
+                <div class="card totaal-card">
+                    <h3>Dagen Gewinkeld</h3>
+                    <p id="supAantalDagen" class="bedrag neutraal" style="font-size: 1.5rem;">0</p>
+                </div>
+                <div class="card totaal-card">
+                    <h3>% van de tijd</h3>
+                    <p id="supPercentage" class="bedrag neutraal" style="font-size: 1.5rem; color: #d97706;">0%</p>
+                </div>
+                <div class="card totaal-card">
+                    <h3>Totaal Uitgegeven</h3>
+                    <p id="supTotaal" class="bedrag negatief" style="font-size: 1.5rem;">€ 0.00</p>
+                </div>
+            </section>
+
+            <div class="content-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                <section class="card">
+                    <h3 style="margin-top: 0;">Uitgaven per Winkel</h3>
+                    <div class="tabel-wrapper">
+                        <table>
+                            <thead><tr><th>Winkel</th><th style="text-align: right;">Bedrag</th></tr></thead>
+                            <tbody id="supWinkelBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h3 style="margin-top: 0;">Alle Transacties</h3>
+                    <div class="tabel-wrapper">
+                        <table>
+                            <thead><tr><th>Datum</th><th>Winkel</th><th>Bedrag</th></tr></thead>
+                            <tbody id="supTransactiesBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+
     </div>
     
     <a href="JOUW_GOOGLE_FORM_LINK_HIER" target="_blank" class="fab-btn" title="Kassaticket toevoegen">

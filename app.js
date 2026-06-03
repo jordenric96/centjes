@@ -1,4 +1,4 @@
-// app.js - Financieel Dashboard - Volledig met Gesynchroniseerde Database
+// app.js - Financieel Dashboard - Volledig met Gesynchroniseerde Database & Kookapp
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -78,20 +78,24 @@ let huidigDatum = new Date();
 let toonJaar = huidigDatum.getFullYear();
 let toonWeek = getISOWeek(huidigDatum);
 
+// --- GEÜPDATETE SWITCHVIEW FUNCTIE ---
 function switchView(viewName) {
     document.getElementById('view-dashboard').style.display = viewName === 'dashboard' ? 'block' : 'none';
     document.getElementById('view-weekbudget').style.display = viewName === 'weekbudget' ? 'block' : 'none';
     document.getElementById('view-supermarkt').style.display = viewName === 'supermarkt' ? 'block' : 'none';
     document.getElementById('view-friet').style.display = viewName === 'friet' ? 'block' : 'none';
+    document.getElementById('view-kook').style.display = viewName === 'kook' ? 'block' : 'none';
     
     document.getElementById('btn-tab-dash').className = viewName === 'dashboard' ? 'tab-btn active' : 'tab-btn';
     document.getElementById('btn-tab-week').className = viewName === 'weekbudget' ? 'tab-btn active' : 'tab-btn';
     document.getElementById('btn-tab-sup').className = viewName === 'supermarkt' ? 'tab-btn active' : 'tab-btn';
     document.getElementById('btn-tab-friet').className = viewName === 'friet' ? 'tab-btn active' : 'tab-btn';
+    document.getElementById('btn-tab-kook').className = viewName === 'kook' ? 'tab-btn active' : 'tab-btn';
     
     if(viewName === 'weekbudget') { updateWeekbudgetUI(); }
     if(viewName === 'supermarkt') { updateSupermarktDash(); }
     if(viewName === 'friet') { updateFrietDash(); }
+    if(viewName === 'kook') { showKookSectie('kook-dagen-lijst'); } // Reset kookapp naar lijst als je de tab opent
 }
 
 function fetchCSV(url) {
@@ -120,7 +124,6 @@ async function laadAlleData() {
 
     budgetData = await fetchCSV(supermarktSheetUrl);
 
-    // DE MAGISCHE FIX: Injecteer de handmatige invoer direct in de algemene database!
     if (budgetData.length > 0) {
         budgetData.forEach(rij => {
             let dStr = haalWaarde(rij, 'datum') || haalWaarde(rij, 'tijdstempel');
@@ -132,8 +135,8 @@ async function laadAlleData() {
                 if (!isNaN(bedragFloat)) {
                     alleData.push({
                         "Uitvoeringsdatum": String(dStr).split(' ')[0],
-                        "Bedrag": -Math.abs(bedragFloat), // Altijd een uitgave
-                        "Naam van de tegenpartij": schoonNaamOp(winkel), // Opschonen voor strakke naam
+                        "Bedrag": -Math.abs(bedragFloat),
+                        "Naam van de tegenpartij": schoonNaamOp(winkel),
                         "Mededeling": "Google Formulier",
                         "Details": "",
                         "Type verrichting": "Handmatig"
@@ -1132,4 +1135,161 @@ function bouwTransactieTabel(data) {
     });
     
     tbody.innerHTML = html;
+}
+
+// ==========================================
+// --- PAREL KOOKAPP LOGICA & RECEPTEN ---
+// ==========================================
+
+const recipes = {
+    'maandag': {
+        date: 'Maandag 8 juni',
+        title: 'Koreaanse gehaktballetjes met broccoli en zilvervliesrijst',
+        tags: { price: '💰 ~ €11,00', cal: '🔥 550 kcal', protein: '💪 38g eiwit' },
+        ingredients: [
+            '450g mager gemengd gehakt',
+            '1 grote krop broccoli (ca. 500g)',
+            '225g zilvervliesrijst',
+            '2 teentjes knoflook (fijngehakt)',
+            '1 el verse gember (geraspt)',
+            '4 el zoutarme sojasaus',
+            '1 el sesamolie',
+            'Zwarte peper en olijfolie'
+        ],
+        steps: [
+            'Kook de zilvervliesrijst volgens de aanwijzingen op de verpakking.',
+            'Snijd de broccoli in roosjes en stoom of kook deze in 6-8 minuten beetgaar.',
+            'Meng het gehakt met de helft van de knoflook, de helft van de gember en wat peper. Rol er kleine balletjes van.',
+            'Bak de balletjes in een pan met een beetje olijfolie goudbruin en gaar (ca. 8-10 minuten).',
+            'Voeg de resterende knoflook en gember toe aan de pan en bak 1 minuut mee.',
+            'Blus af met de sojasaus en sesamolie en laat de saus 2 minuten inkoken tot deze iets stroperiger wordt en de balletjes mooi bedekt.',
+            'Serveer de gehaktballetjes met de rijst en broccoli.'
+        ]
+    },
+    'dinsdag': {
+        date: 'Dinsdag 9 juni',
+        title: 'Geroosterde wortelen met amandelen, pompoenpitten en kruidige couscous',
+        tags: { price: '💰 ~ €8,00', cal: '🔥 520 kcal', protein: '💪 18g eiwit' },
+        ingredients: [
+            '600g wortelen',
+            '225g volkoren couscous',
+            '50g ongezouten amandelen (grof gehakt)',
+            '25g pompoenpitten',
+            '150g natuuryoghurt',
+            '2 el olijfolie',
+            '1 tl komijnpoeder & 1 tl korianderpoeder',
+            'Verse munt of peterselie',
+            'Zout en peper'
+        ],
+        steps: [
+            'Verwarm de oven voor op 200°C. Schil de wortelen en snijd ze in de lengte in parten.',
+            'Meng de wortelen op een bakplaat met olijfolie, komijnpoeder, korianderpoeder, zout en peper. Rooster ze 25-30 minuten tot ze zacht zijn en gekaramelliseerde randjes hebben.',
+            'Rooster ondertussen de amandelen en pompoenpitten kort in een droge pan tot ze geuren.',
+            'Bereid de couscous: doe deze in a hittebestendige kom, giet er kokend water over (tot net 1 cm boven de couscous), dek af en laat 5 minuten wellen. Roer daarna los met een vork.',
+            'Meng de yoghurt met een snuf peper en zout.',
+            'Verdeel de couscous over de borden, leg de geroosterde wortelen erop, garneer met de noten en pitten en werk af met de frisse yoghurtdressing en verse kruiden.'
+        ]
+    },
+    'woensdag': {
+        date: 'Woensdag 10 juni',
+        title: 'Volkorenpasta met geroosterde courgette en verse tomatensaus',
+        tags: { price: '💰 ~ €9,00', cal: '🔥 480 kcal', protein: '💪 20g eiwit' },
+        ingredients: [
+            '300g volkoren penne',
+            '1 à 2 courgettes',
+            '500ml passata (gezeefde tomaten)',
+            'Een handvol verse kerstomaatjes',
+            '50g geraspte Grana Padano',
+            '1 rode ui (gesnipperd) & 2 teentjes knoflook',
+            '1 el gedroogde oregano & verse basilicum',
+            'Olijfolie, zout en peper'
+        ],
+        steps: [
+            'Verwarm de oven op 200°C. Snijd de courgette in blokjes, meng met olijfolie, zout en peper en rooster 20 minuten in de oven.',
+            'Kook de volkorenpasta al dente in gezouten water.',
+            'Fruit de ui en knoflook glazig in een ruime pan. Voeg de oregano en gehalveerde kerstomaatjes toe en bak kort mee.',
+            'Giet de passata erbij en laat de saus 10 minuten zachtjes pruttelen.',
+            'Roer de geroosterde courgette door de tomatensaus.',
+            'Meng de saus met de uitgelekte pasta. Serveer met verse basilicum en de Grana Padano.'
+        ]
+    },
+    'donderdag': {
+        date: 'Donderdag 11 juni',
+        title: 'Gemarineerde kippendijen met zoete aardappel en snackpaprika-salade',
+        tags: { price: '💰 ~ €12,50', cal: '🔥 580 kcal', protein: '💪 28g eiwit' },
+        ingredients: [
+            '400g kippendijfilet',
+            '600g zoete aardappel',
+            '1 zakje/krop frisse sla',
+            '200g snackpaprika\'s',
+            '1 tl gerookt paprikapoeder & 1 tl komijn',
+            'Olijfolie & een scheutje azijn',
+            'Zout en peper'
+        ],
+        steps: [
+            'Verwarm de oven voor op 200°C. Schil de zoete aardappelen en snijd in gelijke blokjes. Meng met olijfolie, zout en peper en rooster 25-30 minuten in de oven.',
+            'Wrijf de kippendijfilets in met olijfolie, gerookt paprikapoeder, komijn, zout en peper.',
+            'Bak de kippendijen in een pan op middelhoog vuur in ca. 12-15 minuten gaar (keer halverwege).',
+            'Maak de salade: was de sla, snijd de snackpaprika\'s in ringen en meng alles met een simpele dressing van olijfolie, een scheutje azijn, zout en peper.',
+            'Serveer de malse kip met de zoete aardappelblokjes en de frisse salade.'
+        ]
+    },
+    'vrijdag': {
+        date: 'Vrijdag 12 juni',
+        title: 'Witte vis uit de oven met citroen-dillekorst en groentepuree',
+        tags: { price: '💰 ~ €11,50', cal: '🔥 450 kcal', protein: '💪 32g eiwit' },
+        ingredients: [
+            '400g stevige witte visfilet (bijv. koolvis of kabeljauw)',
+            '400g kruimige aardappelen',
+            '400g bloemkool (in roosjes)',
+            '150g diepvrieserwtjes',
+            '1 verse citroen',
+            'Verse dille',
+            'Een scheutje melk',
+            'Olijfolie, peper en zout'
+        ],
+        steps: [
+            'Verwarm de oven voor op 180°C. Leg de visfilets in een ingevette ovenschaal.',
+            'Rasp de schil van de citroen. Meng de citroenrasp met 1 el olijfolie, zout, peper en fijngehakte verse dille. Wrijf de vis hiermee in.',
+            'Bak de vis 15-20 minuten in de oven tot deze gaar is en makkelijk uit elkaar valt.',
+            'Schil intussen de aardappelen. Kook de aardappelen samen met de bloemkoolroosjes in één pot in ca. 15 minuten gaar.',
+            'Kook de erwtjes de laatste 3 minuten mee, of blancheer ze apart.',
+            'Giet de aardappelen en bloemkool af. Stamp tot een gladde puree met een klein scheutje melk, peper en zout. Spatel er daarna voorzichtig de erwtjes door.',
+            'Serveer de vis bovenop of naast de groentepuree met een partje van de overgebleven citroen.'
+        ]
+    }
+};
+
+function showKookSectie(viewId) {
+    document.querySelectorAll('.kook-sectie').forEach(el => el.style.display = 'none');
+    document.getElementById(viewId).style.display = 'block';
+    window.scrollTo(0,0);
+}
+
+function openRecipe(day) {
+    const recipe = recipes[day];
+    const content = document.getElementById('kook-recipe-content');
+    
+    let ingList = recipe.ingredients.map(i => `<li>${i}</li>`).join('');
+    let stepList = recipe.steps.map(s => `<li>${s}</li>`).join('');
+    
+    content.innerHTML = `
+        <div class="kook-recipe-header card" style="border-top: 6px solid var(--kook-red); margin-bottom: 20px;">
+            <h2 style="color: var(--kook-red); margin-top:0; font-size: 1.2em;">${recipe.date}</h2>
+            <h1 style="margin: 10px 0; font-size: 1.6em; color: #333;">${recipe.title}</h1>
+            <div class="kook-tag-container" style="margin-top: 15px;">
+                <span class="kook-tag kook-price">${recipe.tags.price}</span>
+                <span class="kook-tag kook-cal">${recipe.tags.cal}</span>
+                <span class="kook-tag kook-protein">${recipe.tags.protein}</span>
+            </div>
+        </div>
+        <div class="card">
+            <h3 style="color: var(--kook-green); border-bottom: 2px solid var(--kook-yellow); padding-bottom: 8px;">Ingrediënten (3 personen)</h3>
+            <ul style="line-height: 1.8; margin-bottom: 20px;">${ingList}</ul>
+            
+            <h3 style="color: var(--kook-green); border-bottom: 2px solid var(--kook-yellow); padding-bottom: 8px;">Bereidingswijze</h3>
+            <ol style="line-height: 1.8;">${stepList}</ol>
+        </div>
+    `;
+    showKookSectie('kook-recipe-view');
 }

@@ -1234,30 +1234,31 @@ const recipes = {
             'Serveer de malse kip met de zoete aardappelblokjes en de frisse salade.'
         ]
     },
-    'vrijdag': {
+   'vrijdag': {
         date: 'Vrijdag 12 juni',
-        title: 'Witte vis uit de oven met citroen-dillekorst en groentepuree',
-        tags: { price: '💰 ~ €11,50', cal: '🔥 450 kcal', protein: '💪 32g eiwit' },
+        title: 'Kalkoenlapjes met citroen-kruidenkorst en groentepuree',
+        tags: { price: '💰 ~ €11,00', cal: '🔥 460 kcal', protein: '💪 35g eiwit' },
         ingredients: [
-            '400g stevige witte visfilet (bijv. koolvis of kabeljauw)',
+            '400g kalkoenlapjes (of dunne kipfilets)',
             '400g kruimige aardappelen',
             '400g bloemkool (in roosjes)',
             '150g diepvrieserwtjes',
             '1 verse citroen',
-            'Verse dille',
+            'Verse dille of peterselie',
             'Een scheutje melk',
             'Olijfolie, peper en zout'
         ],
         steps: [
-            'Verwarm de oven voor op 180°C. Leg de visfilets in een ingevette ovenschaal.',
-            'Rasp de schil van de citroen. Meng de citroenrasp met 1 el olijfolie, zout, peper en fijngehakte verse dille. Wrijf de vis hiermee in.',
-            'Bak de vis 15-20 minuten in de oven tot deze gaar is en makkelijk uit elkaar valt.',
+            'Verwarm de oven voor op 180°C. Leg de kalkoenlapjes in een licht ingevette ovenschaal.',
+            'Rasp de schil van de citroen. Meng de citroenrasp met 1 el olijfolie, zout, peper en fijngehakte verse kruiden. Wrijf het vlees hiermee in.',
+            'Bak de kalkoenlapjes 15-20 minuten in de oven tot ze mooi gaar en sappig zijn (of bak ze goudbruin in een pan).',
             'Schil intussen de aardappelen. Kook de aardappelen samen met de bloemkoolroosjes in één pot in ca. 15 minuten gaar.',
             'Kook de erwtjes de laatste 3 minuten mee, of blancheer ze apart.',
             'Giet de aardappelen en bloemkool af. Stamp tot een gladde puree met een klein scheutje melk, peper en zout. Spatel er daarna voorzichtig de erwtjes door.',
-            'Serveer de vis bovenop of naast de groentepuree met een partje van de overgebleven citroen.'
+            'Serveer de malse kalkoen bovenop of naast de groentepuree met een partje van de overgebleven citroen.'
         ]
     }
+
 };
 
 function showKookSectie(viewId) {

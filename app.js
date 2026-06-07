@@ -1,4 +1,4 @@
-// app.js - Financieel Dashboard - Volledig met Gesynchroniseerde Database & Kookapp
+// app.js - Financieel Dashboard - Volledig Geoptimaliseerd met Categorieën Tab & Visual Pills
 
 const bankSheetUrls = [
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTN9bFzUXNhhevW3Whon9dffKP9aNuHOAwtvUcQzo1W9hwMt97yPEu1x7u5kNhTo0Koh4FN56gLWZT/pub?gid=1291841456&single=true&output=csv",
@@ -72,30 +72,37 @@ const VASTE_CATEGORIEEN = ["AG insurance", "Lening", "Water, Gas & Elektriciteit
 
 let alleData = []; 
 let budgetData = []; 
-let mijnMaandGrafiek = null, mijnCatGrafiek = null, mijnBalansGrafiek = null, mijnYoYGrafiek = null, mijnSupPercGrafiek = null, mijnFrietMaandGrafiek = null;
+let mijnMaandGrafiek = null, mijnCatGrafiek = null, mijnBalansGrafiek = null, mijnYoYGrafiek = null, mijnSupPercGrafiek = null, mijnFrietMaandGrafiek = null, mijnAlgCatGrafiek = null;
 
 let huidigDatum = new Date();
 let toonJaar = huidigDatum.getFullYear();
 let toonWeek = getISOWeek(huidigDatum);
 
-// --- GEÜPDATETE SWITCHVIEW FUNCTIE ---
+// State variabelen voor de pill filters
+let actieveMaandSup = 'alle';
+let actieveMaandFriet = 'alle';
+let actieveMaandCat = 'alle';
+let actieveCategorieLijst = 'Restaurant';
+
+const maandenKort = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+
 function switchView(viewName) {
     document.getElementById('view-dashboard').style.display = viewName === 'dashboard' ? 'block' : 'none';
     document.getElementById('view-weekbudget').style.display = viewName === 'weekbudget' ? 'block' : 'none';
     document.getElementById('view-supermarkt').style.display = viewName === 'supermarkt' ? 'block' : 'none';
     document.getElementById('view-friet').style.display = viewName === 'friet' ? 'block' : 'none';
-    document.getElementById('view-kook').style.display = viewName === 'kook' ? 'block' : 'none';
+    document.getElementById('view-categories').style.display = viewName === 'categories' ? 'block' : 'none';
     
     document.getElementById('btn-tab-dash').className = viewName === 'dashboard' ? 'tab-btn active' : 'tab-btn';
     document.getElementById('btn-tab-week').className = viewName === 'weekbudget' ? 'tab-btn active' : 'tab-btn';
     document.getElementById('btn-tab-sup').className = viewName === 'supermarkt' ? 'tab-btn active' : 'tab-btn';
     document.getElementById('btn-tab-friet').className = viewName === 'friet' ? 'tab-btn active' : 'tab-btn';
-    document.getElementById('btn-tab-kook').className = viewName === 'kook' ? 'tab-btn active' : 'tab-btn';
+    document.getElementById('btn-tab-cat').className = viewName === 'categories' ? 'tab-btn active' : 'tab-btn';
     
     if(viewName === 'weekbudget') { updateWeekbudgetUI(); }
     if(viewName === 'supermarkt') { updateSupermarktDash(); }
     if(viewName === 'friet') { updateFrietDash(); }
-    if(viewName === 'kook') { showKookSectie('kook-dagen-lijst'); } // Reset kookapp naar lijst als je de tab opent
+    if(viewName === 'categories') { updateCategorieDash(); }
 }
 
 function fetchCSV(url) {
@@ -122,22 +129,22 @@ async function laadAlleData() {
         alleData = alleData.concat(data);
     });
 
-    budgetData = await fetchCSV(supermarktSheetUrl);
+    let manueleData = await fetchCSV(supermarktSheetUrl);
 
-    if (budgetData.length > 0) {
-        budgetData.forEach(rij => {
+    if (manueleData.length > 0) {
+        manueleData.forEach(rij => {
             let dStr = haalWaarde(rij, 'datum') || haalWaarde(rij, 'tijdstempel');
             let bStr = haalWaarde(rij, 'bedrag');
             let winkel = haalWaarde(rij, 'winkel') || 'Handmatige bon';
 
-            if (dStr && bStr != null) {
+            if (dStr && bStr !== undefined && bStr !== null) {
                 let bedragFloat = parseBedragNumber(bStr);
                 if (!isNaN(bedragFloat)) {
                     alleData.push({
-                        "Uitvoeringsdatum": String(dStr).split(' ')[0],
+                        "Uitvoeringsdatum": String(dStr).split(' ')[0], 
                         "Bedrag": -Math.abs(bedragFloat),
-                        "Naam van de tegenpartij": schoonNaamOp(winkel),
-                        "Mededeling": "Google Formulier",
+                        "Naam van de tegenpartij": winkel,
+                        "Mededeling": "Manuele invoer",
                         "Details": "",
                         "Type verrichting": "Handmatig"
                     });
@@ -145,6 +152,8 @@ async function laadAlleData() {
             }
         });
     }
+
+    alleData.sort((a, b) => parseDatumToDate(haalWaarde(b, KOLOM_DATUM)) - parseDatumToDate(haalWaarde(a, KOLOM_DATUM)));
 
     if (alleData.length > 0) {
         statusEl.innerText = `Bank verbonden (${alleData.length} transacties)`;
@@ -217,25 +226,31 @@ function getDateOfISOWeek(w, y) {
     return ISOweekStart;
 }
 
-function haalJaar(datumStr) {
-    if (!datumStr) return "Onbekend";
-    const parts = String(datumStr).split(/[-/]/);
-    if (parts.length >= 3) {
-        let part0 = parts[0].split(' ')[0];
-        let j = part0.length === 4 ? part0 : parts[2].split(' ')[0];
-        if(!isNaN(parseInt(j))) return j;
+function haalJaar(datumStr, bedragVal = 0) {
+    let d = parseDatumToDate(datumStr);
+    if (!d) return "Onbekend";
+    let j = d.getFullYear();
+    let m = d.getMonth();
+    let b = parseBedragNumber(bedragVal);
+    
+    if (!isNaN(b) && b > 0 && d.getDate() >= 24) {
+        m++;
+        if (m > 11) j++;
     }
-    return "Onbekend";
+    return String(j);
 }
 
-function haalRuweMaand(datumStr) {
-    if (!datumStr) return null;
-    const parts = String(datumStr).split(/[-/]/);
-    if (parts.length >= 3) {
-        let m = parseInt(parts[1]) - 1;
-        if(!isNaN(m)) return m;
+function haalRuweMaand(datumStr, bedragVal = 0) {
+    let d = parseDatumToDate(datumStr);
+    if (!d) return null;
+    let m = d.getMonth();
+    let b = parseBedragNumber(bedragVal);
+    
+    if (!isNaN(b) && b > 0 && d.getDate() >= 24) {
+        m++;
+        if (m > 11) m = 0;
     }
-    return null;
+    return m;
 }
 
 function bepaalCategorie(rij) {
@@ -317,10 +332,66 @@ function schoonNaamOp(naamInput, rij = null) {
     return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
+// Functie om de visuele "Pills" (knoppen) voor de maanden te genereren
+function bouwMaandPills(containerId, actieveState, updateFunctieNaam) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    let html = `<button class="pill ${actieveState === 'alle' ? 'active' : ''}" onclick="zetMaandPill('${containerId}', 'alle', '${updateFunctieNaam}')">Alle</button>`;
+    
+    maandenKort.forEach((m, i) => {
+        html += `<button class="pill ${parseInt(actieveState) === i ? 'active' : ''}" onclick="zetMaandPill('${containerId}', '${i}', '${updateFunctieNaam}')">${m}</button>`;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Handler als op een maand pill wordt geklikt
+function zetMaandPill(containerId, waarde, updateFunctieNaam) {
+    if (containerId === 'pills-sup-maand') actieveMaandSup = waarde;
+    if (containerId === 'pills-friet-maand') actieveMaandFriet = waarde;
+    if (containerId === 'pills-cat-maand') actieveMaandCat = waarde;
+    
+    bouwMaandPills(containerId, waarde, updateFunctieNaam);
+    
+    if (updateFunctieNaam === 'updateSupermarktDash') updateSupermarktDash();
+    if (updateFunctieNaam === 'updateFrietDash') updateFrietDash();
+    if (updateFunctieNaam === 'updateCategorieDash') updateCategorieDash();
+}
+
+// Functie om de Categorie Pills te genereren
+function bouwCatPills() {
+    const container = document.getElementById('pills-cat-lijst');
+    if (!container) return;
+    
+    let alleCats = Object.keys(CATEGORIE_RULES);
+    alleCats.push("Overig");
+    alleCats.sort();
+    
+    // Zorg dat de actieve er tussen zit (fallback naar Restaurant)
+    if (!alleCats.includes(actieveCategorieLijst)) actieveCategorieLijst = "Restaurant";
+
+    let html = '';
+    alleCats.forEach(cat => {
+        // Sparen verbergen in dit uitgaven-overzichtje (tenzij echt gewenst, maar meestal onzinnig voor analyse)
+        if (cat !== "Sparen & Intern") {
+            html += `<button class="pill ${actieveCategorieLijst === cat ? 'active' : ''}" onclick="zetCatPill('${cat}')">${cat}</button>`;
+        }
+    });
+    
+    container.innerHTML = html;
+}
+
+function zetCatPill(waarde) {
+    actieveCategorieLijst = waarde;
+    bouwCatPills();
+    updateCategorieDash();
+}
+
 function initialiseerDropdowns() {
     const jarenSet = new Set();
     alleData.forEach(rij => { 
-        const jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM)); 
+        const jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM), haalWaarde(rij, KOLOM_BEDRAG)); 
         if (jaar !== "Onbekend") jarenSet.add(jaar); 
     });
     jarenSet.add(String(new Date().getFullYear()));
@@ -331,52 +402,43 @@ function initialiseerDropdowns() {
         jaarSelect.innerHTML += `<option value="${j}">${j}</option>`; 
     });
     
-    const maandenNaam = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
-    
+    // Het algemene dashboard gebruikt nog wel de standaard selects
+    const maandenNaamLopend = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
     const mndSelect = document.getElementById('filterMaand');
     mndSelect.innerHTML = '<option value="alle">Alle Maanden</option>';
-    maandenNaam.forEach((m, i) => { 
-        mndSelect.innerHTML += `<option value="${i}">${m}</option>`; 
-    });
-    
-    const supMndSelect = document.getElementById('supFilterMaand');
-    supMndSelect.innerHTML = '<option value="alle">Alle Maanden</option>';
-    maandenNaam.forEach((m, i) => { 
-        supMndSelect.innerHTML += `<option value="${i}">${m}</option>`; 
-    });
-
-    const frietMndSelect = document.getElementById('frietFilterMaand');
-    frietMndSelect.innerHTML = '<option value="alle">Alle Maanden</option>';
-    maandenNaam.forEach((m, i) => { 
-        frietMndSelect.innerHTML += `<option value="${i}">${m}</option>`; 
-    });
+    maandenNaamLopend.forEach((m, i) => { mndSelect.innerHTML += `<option value="${i}">${m}</option>`; });
 
     const hgSelect = document.getElementById('filterHoofdgroep');
     hgSelect.innerHTML = '<option value="alle">Alle Hoofdgroepen</option>';
-    Object.keys(HOOFD_GROEPEN).sort().forEach(hg => { 
-        hgSelect.innerHTML += `<option value="${hg}">${hg}</option>`; 
-    });
+    Object.keys(HOOFD_GROEPEN).sort().forEach(hg => { hgSelect.innerHTML += `<option value="${hg}">${hg}</option>`; });
     hgSelect.innerHTML += '<option value="Overig">Overig</option>';
     
     const catSelect = document.getElementById('filterCategorie');
     catSelect.innerHTML = '<option value="alle">Alle Categorieën</option>';
-    Object.keys(CATEGORIE_RULES).sort().forEach(cat => { 
-        catSelect.innerHTML += `<option value="${cat}">${cat}</option>`; 
-    });
+    Object.keys(CATEGORIE_RULES).sort().forEach(cat => { catSelect.innerHTML += `<option value="${cat}">${cat}</option>`; });
     catSelect.innerHTML += '<option value="Overig">Overig</option>';
     
     ['jaarSelect', 'filterMaand', 'filterHoofdgroep', 'filterCategorie', 'sorteerSelect', 'toonEnkelOverig'].forEach(id => {
-        document.getElementById(id).addEventListener('change', updateDashboard);
+        document.getElementById(id).addEventListener('change', () => {
+            updateDashboard();
+            if (id === 'jaarSelect') {
+                updateSupermarktDash();
+                updateFrietDash();
+                updateCategorieDash();
+            }
+        });
     });
-    
-    document.getElementById('supFilterMaand').addEventListener('change', updateSupermarktDash);
-    document.getElementById('jaarSelect').addEventListener('change', updateSupermarktDash);
-    document.getElementById('frietFilterMaand').addEventListener('change', updateFrietDash);
-    document.getElementById('jaarSelect').addEventListener('change', updateFrietDash);
+
+    // Bouw de nieuwe visual pills
+    bouwMaandPills('pills-sup-maand', actieveMaandSup, 'updateSupermarktDash');
+    bouwMaandPills('pills-friet-maand', actieveMaandFriet, 'updateFrietDash');
+    bouwMaandPills('pills-cat-maand', actieveMaandCat, 'updateCategorieDash');
+    bouwCatPills();
 
     updateDashboard();
     updateSupermarktDash();
     updateFrietDash();
+    updateCategorieDash();
 }
 
 function veranderWeek(delta) {
@@ -408,7 +470,8 @@ function updateWeekbudgetUI() {
         if(isNaN(bedrag) || bedrag >= 0) return; 
         
         let absoluteBedrag = Math.abs(bedrag);
-        let rijJaar = parseInt(haalJaar(haalWaarde(rij, KOLOM_DATUM)));
+        // Voor de weekweergave houden we strikt de kalender aan (geen boekhoud-24ste logica)
+        let rijJaar = parseInt(haalJaar(haalWaarde(rij, KOLOM_DATUM))); 
         let rijMaand = haalRuweMaand(haalWaarde(rij, KOLOM_DATUM));
         
         if (rijJaar === doelJaar && rijMaand === doelMaand) totaalMaandUitgegeven += absoluteBedrag;
@@ -451,19 +514,19 @@ function updateWeekbudgetUI() {
 
 function updateFrietDash() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
-    const fMaand = document.getElementById('frietFilterMaand').value; 
+    const fMaand = actieveMaandFriet; 
     let frietData = [];
     
     alleData.forEach(rij => {
-        if(bepaalCategorie(rij) === 'Frietjes' && haalJaar(haalWaarde(rij, KOLOM_DATUM)) === gekozenJaar) {
-            let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
+        let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
+        if(bepaalCategorie(rij) === 'Frietjes' && haalJaar(haalWaarde(rij, KOLOM_DATUM), b) === gekozenJaar) {
             if(b < 0) { 
                 frietData.push({
                     datumObj: parseDatumToDate(haalWaarde(rij, KOLOM_DATUM)),
                     datumStr: haalWaarde(rij, KOLOM_DATUM).split(' ')[0],
                     bedrag: Math.abs(b),
                     winkel: schoonNaamOp(null, rij),
-                    ruweMaand: haalRuweMaand(haalWaarde(rij, KOLOM_DATUM))
+                    ruweMaand: haalRuweMaand(haalWaarde(rij, KOLOM_DATUM), b)
                 });
             }
         }
@@ -530,7 +593,7 @@ function updateFrietDash() {
     window.mijnFrietMaandGrafiek = new Chart(document.getElementById('frietMaandGrafiek').getContext('2d'), {
         type: 'bar',
         data: {
-            labels: ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'],
+            labels: maandenKort,
             datasets: [{
                 label: 'Uitgaven Frituur',
                 data: maandTotalen,
@@ -550,12 +613,82 @@ function updateFrietDash() {
     }
 }
 
+// NIEUW: UPDATE CATEGORIE DASHBOARD
+function updateCategorieDash() {
+    const gekozenJaar = document.getElementById('jaarSelect').value;
+    const fMaand = actieveMaandCat; 
+    let catData = [];
+    
+    alleData.forEach(rij => {
+        let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
+        if(bepaalCategorie(rij) === actieveCategorieLijst && haalJaar(haalWaarde(rij, KOLOM_DATUM), b) === gekozenJaar) {
+            if(b < 0) { 
+                catData.push({
+                    datumObj: parseDatumToDate(haalWaarde(rij, KOLOM_DATUM)),
+                    datumStr: haalWaarde(rij, KOLOM_DATUM).split(' ')[0],
+                    bedrag: Math.abs(b),
+                    winkel: schoonNaamOp(null, rij),
+                    ruweMaand: haalRuweMaand(haalWaarde(rij, KOLOM_DATUM), b)
+                });
+            }
+        }
+    });
+
+    let filteredData = catData;
+    if (fMaand !== "alle") {
+        let m = parseInt(fMaand);
+        filteredData = catData.filter(item => item.ruweMaand === m);
+    }
+
+    let totaalBedrag = 0;
+    let bezoeken = filteredData.length;
+    let duurste = 0;
+
+    filteredData.forEach(item => {
+        totaalBedrag += item.bedrag;
+        if (item.bedrag > duurste) duurste = item.bedrag;
+    });
+
+    let gemKosten = bezoeken > 0 ? totaalBedrag / bezoeken : 0;
+
+    document.getElementById('catTotaal').innerText = formatBedrag(totaalBedrag);
+    document.getElementById('catBezoeken').innerText = bezoeken;
+    document.getElementById('catGemKosten').innerText = formatBedrag(gemKosten);
+    document.getElementById('catDuurste').innerText = formatBedrag(duurste);
+
+    let maandTotalen = Array(12).fill(0);
+    catData.forEach(item => {
+        if (item.ruweMaand !== null) maandTotalen[item.ruweMaand] += item.bedrag;
+    });
+
+    if (window.mijnAlgCatGrafiek) window.mijnAlgCatGrafiek.destroy();
+    window.mijnAlgCatGrafiek = new Chart(document.getElementById('catMaandGrafiek').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: maandenKort,
+            datasets: [{
+                label: `Uitgaven ${actieveCategorieLijst}`,
+                data: maandTotalen,
+                backgroundColor: '#1e3a8a',
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    let tabelData = [...filteredData].sort((a, b) => b.datumObj - a.datumObj);
+    let tb = document.getElementById('catTransactiesBody');
+    if (tabelData.length === 0) {
+        tb.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px;">Geen transacties gevonden.</td></tr>';
+    } else {
+        tb.innerHTML = tabelData.map(t => `<tr><td>${t.datumStr}</td><td><div class="omschrijving-cel" title="${t.winkel}">${t.winkel}</div></td><td class="tekst-negatief" style="text-align:right;"><strong>${formatBedrag(t.bedrag)}</strong></td></tr>`).join('');
+    }
+}
+
+
 function tekenSupPercGrafiek(gekozenJaar, supData) {
     let mndUniekeDagen = Array(12).fill().map(() => new Set());
-    
-    supData.forEach(item => { 
-        if (item.ruweMaand !== null) mndUniekeDagen[item.ruweMaand].add(item.datumStr); 
-    });
+    supData.forEach(item => { if (item.ruweMaand !== null) mndUniekeDagen[item.ruweMaand].add(item.datumStr); });
     
     let percData = Array(12).fill(null);
     let today = new Date();
@@ -576,7 +709,7 @@ function tekenSupPercGrafiek(gekozenJaar, supData) {
     window.mijnSupPercGrafiek = new Chart(document.getElementById('supPercGrafiek').getContext('2d'), {
         type: 'bar', 
         data: { 
-            labels: ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'], 
+            labels: maandenKort, 
             datasets: [{ 
                 label: '% Dagen gewinkeld', 
                 data: percData, 
@@ -604,19 +737,19 @@ function tekenSupPercGrafiek(gekozenJaar, supData) {
 
 function updateSupermarktDash() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
-    const fMaand = document.getElementById('supFilterMaand').value; 
+    const fMaand = actieveMaandSup; 
     let supDataGeheelJaar = [];
     
     alleData.forEach(rij => {
-        if(haalJaar(haalWaarde(rij, KOLOM_DATUM)) === gekozenJaar && bepaalCategorie(rij) === 'Supermarkt') {
-            let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
+        let b = parseBedragNumber(haalWaarde(rij, KOLOM_BEDRAG));
+        if(bepaalCategorie(rij) === 'Supermarkt' && haalJaar(haalWaarde(rij, KOLOM_DATUM), b) === gekozenJaar) {
             if(b < 0) { 
                 supDataGeheelJaar.push({
                     datumObj: parseDatumToDate(haalWaarde(rij, KOLOM_DATUM)),
                     datumStr: haalWaarde(rij, KOLOM_DATUM).split(' ')[0],
                     bedrag: Math.abs(b),
                     winkel: schoonNaamOp(null, rij),
-                    ruweMaand: haalRuweMaand(haalWaarde(rij, KOLOM_DATUM))
+                    ruweMaand: haalRuweMaand(haalWaarde(rij, KOLOM_DATUM), b)
                 });
             }
         }
@@ -696,7 +829,8 @@ function updateSupermarktDash() {
 
 function updateDashboard() {
     const gekozenJaar = document.getElementById('jaarSelect').value;
-    const jaardata = alleData.filter(rij => haalJaar(haalWaarde(rij, KOLOM_DATUM)) === gekozenJaar);
+    
+    const jaardata = alleData.filter(rij => haalJaar(haalWaarde(rij, KOLOM_DATUM), haalWaarde(rij, KOLOM_BEDRAG)) === gekozenJaar);
     
     verwerkData(jaardata, gekozenJaar);
     bouwTrendGrafieken(); 
@@ -711,7 +845,7 @@ function updateDashboard() {
     if (document.getElementById('toonEnkelOverig').checked) {
         tabelData = tabelData.filter(rij => bepaalCategorie(rij) === "Overig");
     } else {
-        if (fMaand !== "alle") tabelData = tabelData.filter(rij => haalRuweMaand(haalWaarde(rij, KOLOM_DATUM)) === parseInt(fMaand));
+        if (fMaand !== "alle") tabelData = tabelData.filter(rij => haalRuweMaand(haalWaarde(rij, KOLOM_DATUM), haalWaarde(rij, KOLOM_BEDRAG)) === parseInt(fMaand));
         if (fHoofd !== "alle") tabelData = tabelData.filter(rij => bepaalHoofdgroep(bepaalCategorie(rij)) === fHoofd);
         if (fCat !== "alle") tabelData = tabelData.filter(rij => bepaalCategorie(rij) === fCat);
     }
@@ -728,7 +862,7 @@ function bouwYoYGrafiek(gekozenJaar) {
         if (bepaalCategorie(r) === "Sparen & Intern") return; 
         let b = parseBedragNumber(haalWaarde(r, KOLOM_BEDRAG));
         if (isNaN(b) || b >= 0) return; 
-        let j = parseInt(haalJaar(haalWaarde(r, KOLOM_DATUM))), m = haalRuweMaand(haalWaarde(r, KOLOM_DATUM));
+        let j = parseInt(haalJaar(haalWaarde(r, KOLOM_DATUM), b)), m = haalRuweMaand(haalWaarde(r, KOLOM_DATUM), b);
         if (j === jaarNu && m !== null) dataNu[m] += Math.abs(b);
         if (j === jaarVorige && m !== null) dataVorige[m] += Math.abs(b);
     });
@@ -741,7 +875,7 @@ function bouwYoYGrafiek(gekozenJaar) {
     window.mijnYoYGrafiek = new Chart(document.getElementById('yoyGrafiek').getContext('2d'), {
         type: 'line',
         data: { 
-            labels: ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'], 
+            labels: maandenKort, 
             datasets: [
                 { label: `${jaarNu}`, data: dataNu, borderColor: '#1e3a8a', backgroundColor: '#1e3a8a', borderWidth: 3, tension: 0.4 },
                 { label: `${jaarVorige}`, data: dataVorige, borderColor: '#94a3b8', borderDash: [5, 5], borderWidth: 2, tension: 0.4, fill: false }
@@ -827,8 +961,8 @@ function verwerkData(data, huidigJaar) {
         const datumVal = haalWaarde(r, KOLOM_DATUM);
         let isSparen = (cat === "Sparen & Intern");
         
-        let jaar = haalJaar(datumVal);
-        let maandNum = haalRuweMaand(datumVal);
+        let jaar = haalJaar(datumVal, b);
+        let maandNum = haalRuweMaand(datumVal, b);
         let m = (jaar !== "Onbekend" && maandNum !== null) ? `${jaar}-${String(maandNum + 1).padStart(2, '0')}` : "Onbekend";
         
         if (!maanden[m]) maanden[m] = { in: 0, uit: 0 };
@@ -1061,8 +1195,8 @@ function bouwTrendGrafieken() {
         
         const cat = bepaalCategorie(rij);
         if (['Supermarkt', 'Online', 'Frietjes'].includes(cat)) {
-            let jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM));
-            let maand = haalRuweMaand(haalWaarde(rij, KOLOM_DATUM));
+            let jaar = haalJaar(haalWaarde(rij, KOLOM_DATUM), b);
+            let maand = haalRuweMaand(haalWaarde(rij, KOLOM_DATUM), b);
             if (jaar !== "Onbekend" && maand !== null) { 
                 jarenSet.add(jaar); 
                 if (!trendData[cat][jaar]) trendData[cat][jaar] = Array(12).fill(0); 
@@ -1097,7 +1231,7 @@ function bouwTrendGrafieken() {
         if (window['chart'+s]) window['chart'+s].destroy();
         window['chart'+s] = new Chart(document.getElementById('trend'+cat).getContext('2d'), { 
             type: 'line', 
-            data: { labels: ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'], datasets: datasets }, 
+            data: { labels: maandenKort, datasets: datasets }, 
             options: { responsive: true, maintainAspectRatio: false, spanGaps: false } 
         });
     });
@@ -1135,162 +1269,4 @@ function bouwTransactieTabel(data) {
     });
     
     tbody.innerHTML = html;
-}
-
-// ==========================================
-// --- PAREL KOOKAPP LOGICA & RECEPTEN ---
-// ==========================================
-
-const recipes = {
-    'maandag': {
-        date: 'Maandag 8 juni',
-        title: 'Koreaanse gehaktballetjes met broccoli en zilvervliesrijst',
-        tags: { price: '💰 ~ €11,00', cal: '🔥 550 kcal', protein: '💪 38g eiwit' },
-        ingredients: [
-            '450g mager gemengd gehakt',
-            '1 grote krop broccoli (ca. 500g)',
-            '225g zilvervliesrijst',
-            '2 teentjes knoflook (fijngehakt)',
-            '1 el verse gember (geraspt)',
-            '4 el zoutarme sojasaus',
-            '1 el sesamolie',
-            'Zwarte peper en olijfolie'
-        ],
-        steps: [
-            'Kook de zilvervliesrijst volgens de aanwijzingen op de verpakking.',
-            'Snijd de broccoli in roosjes en stoom of kook deze in 6-8 minuten beetgaar.',
-            'Meng het gehakt met de helft van de knoflook, de helft van de gember en wat peper. Rol er kleine balletjes van.',
-            'Bak de balletjes in een pan met een beetje olijfolie goudbruin en gaar (ca. 8-10 minuten).',
-            'Voeg de resterende knoflook en gember toe aan de pan en bak 1 minuut mee.',
-            'Blus af met de sojasaus en sesamolie en laat de saus 2 minuten inkoken tot deze iets stroperiger wordt en de balletjes mooi bedekt.',
-            'Serveer de gehaktballetjes met de rijst en broccoli.'
-        ]
-    },
-    'dinsdag': {
-        date: 'Dinsdag 9 juni',
-        title: 'Geroosterde wortelen met amandelen, pompoenpitten en kruidige couscous',
-        tags: { price: '💰 ~ €8,00', cal: '🔥 520 kcal', protein: '💪 18g eiwit' },
-        ingredients: [
-            '600g wortelen',
-            '225g volkoren couscous',
-            '50g ongezouten amandelen (grof gehakt)',
-            '25g pompoenpitten',
-            '150g natuuryoghurt',
-            '2 el olijfolie',
-            '1 tl komijnpoeder & 1 tl korianderpoeder',
-            'Verse munt of peterselie',
-            'Zout en peper'
-        ],
-        steps: [
-            'Verwarm de oven voor op 200°C. Schil de wortelen en snijd ze in de lengte in parten.',
-            'Meng de wortelen op een bakplaat met olijfolie, komijnpoeder, korianderpoeder, zout en peper. Rooster ze 25-30 minuten tot ze zacht zijn en gekaramelliseerde randjes hebben.',
-            'Rooster ondertussen de amandelen en pompoenpitten kort in een droge pan tot ze geuren.',
-            'Bereid de couscous: doe deze in a hittebestendige kom, giet er kokend water over (tot net 1 cm boven de couscous), dek af en laat 5 minuten wellen. Roer daarna los met een vork.',
-            'Meng de yoghurt met een snuf peper en zout.',
-            'Verdeel de couscous over de borden, leg de geroosterde wortelen erop, garneer met de noten en pitten en werk af met de frisse yoghurtdressing en verse kruiden.'
-        ]
-    },
-    'woensdag': {
-        date: 'Woensdag 10 juni',
-        title: 'Volkorenpasta met geroosterde courgette en verse tomatensaus',
-        tags: { price: '💰 ~ €9,00', cal: '🔥 480 kcal', protein: '💪 20g eiwit' },
-        ingredients: [
-            '300g volkoren penne',
-            '1 à 2 courgettes',
-            '500ml passata (gezeefde tomaten)',
-            'Een handvol verse kerstomaatjes',
-            '50g geraspte Grana Padano',
-            '1 rode ui (gesnipperd) & 2 teentjes knoflook',
-            '1 el gedroogde oregano & verse basilicum',
-            'Olijfolie, zout en peper'
-        ],
-        steps: [
-            'Verwarm de oven op 200°C. Snijd de courgette in blokjes, meng met olijfolie, zout en peper en rooster 20 minuten in de oven.',
-            'Kook de volkorenpasta al dente in gezouten water.',
-            'Fruit de ui en knoflook glazig in een ruime pan. Voeg de oregano en gehalveerde kerstomaatjes toe en bak kort mee.',
-            'Giet de passata erbij en laat de saus 10 minuten zachtjes pruttelen.',
-            'Roer de geroosterde courgette door de tomatensaus.',
-            'Meng de saus met de uitgelekte pasta. Serveer met verse basilicum en de Grana Padano.'
-        ]
-    },
-    'donderdag': {
-        date: 'Donderdag 11 juni',
-        title: 'Gemarineerde kippendijen met zoete aardappel en snackpaprika-salade',
-        tags: { price: '💰 ~ €12,50', cal: '🔥 580 kcal', protein: '💪 28g eiwit' },
-        ingredients: [
-            '400g kippendijfilet',
-            '600g zoete aardappel',
-            '1 zakje/krop frisse sla',
-            '200g snackpaprika\'s',
-            '1 tl gerookt paprikapoeder & 1 tl komijn',
-            'Olijfolie & een scheutje azijn',
-            'Zout en peper'
-        ],
-        steps: [
-            'Verwarm de oven voor op 200°C. Schil de zoete aardappelen en snijd in gelijke blokjes. Meng met olijfolie, zout en peper en rooster 25-30 minuten in de oven.',
-            'Wrijf de kippendijfilets in met olijfolie, gerookt paprikapoeder, komijn, zout en peper.',
-            'Bak de kippendijen in een pan op middelhoog vuur in ca. 12-15 minuten gaar (keer halverwege).',
-            'Maak de salade: was de sla, snijd de snackpaprika\'s in ringen en meng alles met een simpele dressing van olijfolie, een scheutje azijn, zout en peper.',
-            'Serveer de malse kip met de zoete aardappelblokjes en de frisse salade.'
-        ]
-    },
-   'vrijdag': {
-        date: 'Vrijdag 12 juni',
-        title: 'Kalkoenlapjes met citroen-kruidenkorst en groentepuree',
-        tags: { price: '💰 ~ €11,00', cal: '🔥 460 kcal', protein: '💪 35g eiwit' },
-        ingredients: [
-            '400g kalkoenlapjes (of dunne kipfilets)',
-            '400g kruimige aardappelen',
-            '400g bloemkool (in roosjes)',
-            '150g diepvrieserwtjes',
-            '1 verse citroen',
-            'Verse dille of peterselie',
-            'Een scheutje melk',
-            'Olijfolie, peper en zout'
-        ],
-        steps: [
-            'Verwarm de oven voor op 180°C. Leg de kalkoenlapjes in een licht ingevette ovenschaal.',
-            'Rasp de schil van de citroen. Meng de citroenrasp met 1 el olijfolie, zout, peper en fijngehakte verse kruiden. Wrijf het vlees hiermee in.',
-            'Bak de kalkoenlapjes 15-20 minuten in de oven tot ze mooi gaar en sappig zijn (of bak ze goudbruin in een pan).',
-            'Schil intussen de aardappelen. Kook de aardappelen samen met de bloemkoolroosjes in één pot in ca. 15 minuten gaar.',
-            'Kook de erwtjes de laatste 3 minuten mee, of blancheer ze apart.',
-            'Giet de aardappelen en bloemkool af. Stamp tot een gladde puree met een klein scheutje melk, peper en zout. Spatel er daarna voorzichtig de erwtjes door.',
-            'Serveer de malse kalkoen bovenop of naast de groentepuree met een partje van de overgebleven citroen.'
-        ]
-    }
-
-};
-
-function showKookSectie(viewId) {
-    document.querySelectorAll('.kook-sectie').forEach(el => el.style.display = 'none');
-    document.getElementById(viewId).style.display = 'block';
-    window.scrollTo(0,0);
-}
-
-function openRecipe(day) {
-    const recipe = recipes[day];
-    const content = document.getElementById('kook-recipe-content');
-    
-    let ingList = recipe.ingredients.map(i => `<li>${i}</li>`).join('');
-    let stepList = recipe.steps.map(s => `<li>${s}</li>`).join('');
-    
-    content.innerHTML = `
-        <div class="kook-recipe-header card" style="border-top: 6px solid var(--kook-red); margin-bottom: 20px;">
-            <h2 style="color: var(--kook-red); margin-top:0; font-size: 1.2em;">${recipe.date}</h2>
-            <h1 style="margin: 10px 0; font-size: 1.6em; color: #333;">${recipe.title}</h1>
-            <div class="kook-tag-container" style="margin-top: 15px;">
-                <span class="kook-tag kook-price">${recipe.tags.price}</span>
-                <span class="kook-tag kook-cal">${recipe.tags.cal}</span>
-                <span class="kook-tag kook-protein">${recipe.tags.protein}</span>
-            </div>
-        </div>
-        <div class="card">
-            <h3 style="color: var(--kook-green); border-bottom: 2px solid var(--kook-yellow); padding-bottom: 8px;">Ingrediënten (3 personen)</h3>
-            <ul style="line-height: 1.8; margin-bottom: 20px;">${ingList}</ul>
-            
-            <h3 style="color: var(--kook-green); border-bottom: 2px solid var(--kook-yellow); padding-bottom: 8px;">Bereidingswijze</h3>
-            <ol style="line-height: 1.8;">${stepList}</ol>
-        </div>
-    `;
-    showKookSectie('kook-recipe-view');
 }
